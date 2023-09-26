@@ -1,0 +1,161 @@
+name: get-latest-msvc-2019-build-tools
+
+on: 
+    issue_comment: 
+        types: [created]
+
+jobs:
+    delete_msvc2019_latest:
+        name: Delete tag msvc2019_latest
+        if: ${{ !github.event.issue.pull_request && contains(github.event.issue.labels.*.name, 'get_msvc2019') && github.event.issue.user.login == 'nonwill' && github.triggering_actor == 'nonwill' && github.event.comment.user.login == 'nonwill' }}
+        runs-on: ubuntu-latest
+        steps:
+                - name: Check out Git repository
+                  uses: actions/checkout@v1
+                - name: Delete msvc2019_latest assets
+                  uses: andreaswilli/delete-release-assets-action@v3.0.0
+                  with:
+                        github_token: ${{ secrets.GITHUB_TOKEN }}
+                        tag: msvc2019_latest
+                        deleteOnlyFromDrafts: false
+
+    get_latest_msvc2019:
+        needs: delete_msvc2019_latest
+        name: Get latest msvc 2019 build tools
+        if: ${{ !github.event.issue.pull_request && contains(github.event.issue.labels.*.name, 'get_msvc2019') && github.event.issue.user.login == 'nonwill' && github.triggering_actor == 'nonwill' && github.event.comment.user.login == 'nonwill' }}
+        runs-on: windows-2019
+        steps:
+                - uses: ilammy/msvc-dev-cmd@v1
+                - name: Get version information
+                  id: vars
+                  shell: bash
+                  run: |
+                        echo "update_date=$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
+                        echo "vc_install_dir=$VCToolsInstallDir" >> $GITHUB_OUTPUT
+                        echo "cl_exe_info=$(cl > cl_version 2>&1 && head -n 1 cl_version)" >> $GITHUB_OUTPUT
+
+                - name: msvc-build tools
+                  shell: cmd
+                  run: |
+                        echo winSdkVer=%WindowsSdkVersion%
+                        echo winSdkDir=%WindowsSdkDir%
+                        echo vcToolsInstallDir=%VCToolsInstallDir%
+                        cl.exe
+                        mkdir vcToolsInstallDir Auxiliary
+                        echo Copy VC Auxiliary Build
+                        cd Auxiliary && mkdir Build
+                        xcopy "%vcToolsInstallDir%../../../Auxiliary/Build" Build /Y /E /I /Q /H /C
+                        cd .. && cd vcToolsInstallDir && mkdir Auxiliary crt include atlmfc bin lib
+                        echo Copy Auxiliary, crt, include
+                        xcopy "%vcToolsInstallDir%Auxiliary" Auxiliary /Y /E /I /Q /H /C
+                        xcopy "%vcToolsInstallDir%crt" crt /Y /E /I /Q /H /C
+                        xcopy "%vcToolsInstallDir%include" include /Y /E /I /Q /H /C
+                        cd atlmfc && mkdir include lib src
+                        echo Copy atlmfc: include, src
+                        xcopy "%vcToolsInstallDir%atlmfc/include" include /Y /E /I /Q /H /C
+                        xcopy "%vcToolsInstallDir%atlmfc/src" src /Y /E /I /Q /H /C
+                        cd lib && mkdir x64 x86
+                        echo Copy atlmfc: lib - x64 and x86
+                        xcopy "%vcToolsInstallDir%atlmfc/lib/x64" x64 /Y /E /I /Q /H /C
+                        xcopy "%vcToolsInstallDir%atlmfc/lib/x86" x86 /Y /E /I /Q /H /C
+                        cd .. && cd .. && cd bin && mkdir Hostx64 Hostx86
+                        cd Hostx64 && mkdir x64 x86
+                        echo Copy bin: Hostx64 - x64 and x86
+                        xcopy "%vcToolsInstallDir%bin/Hostx64/x64" x64 /Y /E /I /Q /H /C
+                        xcopy "%vcToolsInstallDir%bin/Hostx64/x86" x86 /Y /E /I /Q /H /C
+                        cd .. && cd Hostx86 && mkdir x64 x86
+                        echo Copy bin: Hostx86 - x64 and x86
+                        xcopy "%vcToolsInstallDir%bin/Hostx86/x64" x64 /Y /E /I /Q /H /C
+                        xcopy "%vcToolsInstallDir%bin/Hostx86/x86" x86 /Y /E /I /Q /H /C
+                        cd .. && cd ..  && cd lib && mkdir x64 x86
+                        echo Copy lib: x64 and x86
+                        xcopy "%vcToolsInstallDir%lib/x64" x64 /Y /E /I /Q /H /C
+                        xcopy "%vcToolsInstallDir%lib/x86" x86 /Y /E /I /Q /H /C
+                        cd ..
+                        del /S /Q *.pdb
+                        cd ..
+
+                - name: zip VC_Auxiliary
+                  uses: thedoctor0/zip-release@0.7.1
+                  with:
+                        type: 'zip'
+                        path: Auxiliary
+                        filename: 'vc_Auxiliary.zip'
+
+                - name: zip atlmfc
+                  uses: thedoctor0/zip-release@0.7.1
+                  with:
+                        type: 'zip'
+                        path: vcToolsInstallDir/atlmfc
+                        filename: 'atlmfc.zip'
+
+                - name: zip Auxiliary
+                  uses: thedoctor0/zip-release@0.7.1
+                  with:
+                        type: 'zip'
+                        path: vcToolsInstallDir/Auxiliary
+                        filename: 'Auxiliary.zip'
+
+                - name: zip crt
+                  uses: thedoctor0/zip-release@0.7.1
+                  with:
+                        type: 'zip'
+                        path: vcToolsInstallDir/crt
+                        filename: 'crt.zip'
+
+                - name: zip include
+                  uses: thedoctor0/zip-release@0.7.1
+                  with:
+                        type: 'zip'
+                        path: vcToolsInstallDir/include
+                        filename: 'include.zip'
+
+                - name: zip lib/x64
+                  uses: thedoctor0/zip-release@0.7.1
+                  with:
+                        type: 'zip'
+                        path: vcToolsInstallDir/lib/x64
+                        filename: 'lib_x64.zip'
+
+                - name: zip lib/x86
+                  uses: thedoctor0/zip-release@0.7.1
+                  with:
+                        type: 'zip'
+                        path: vcToolsInstallDir/lib/x86
+                        filename: 'lib_x86.zip'
+
+                - name: zip bin/Hostx64
+                  uses: thedoctor0/zip-release@0.7.1
+                  with:
+                        type: 'zip'
+                        path: vcToolsInstallDir/bin/Hostx64
+                        filename: 'bin_Hostx64.zip'
+
+                - name: zip bin/Hostx86
+                  uses: thedoctor0/zip-release@0.7.1
+                  with:
+                        type: 'zip'
+                        path: vcToolsInstallDir/bin/Hostx86
+                        filename: 'bin_Hostx86.zip'
+
+                - name: Create Release and Upload Release Asset
+                  uses: softprops/action-gh-release@v1
+                  with:
+                        tag_name: msvc2019_latest
+                        name: Latest msvc-2019 build tools for Windows x86/x64
+                        body: |
+                                date: ${{ steps.vars.outputs.update_date }}
+                                from: ${{ steps.vars.outputs.vc_install_dir }}
+                                cl.exe: ${{ steps.vars.outputs.cl_exe_info }}
+                        draft: false
+                        prerelease: false
+                        files: |
+                                vc_Auxiliary.zip
+                                Auxiliary.zip
+                                include.zip
+                                crt.zip
+                                atlmfc.zip
+                                lib_x64.zip
+                                lib_x86.zip
+                                bin_Hostx64.zip
+                                bin_Hostx86.zip
