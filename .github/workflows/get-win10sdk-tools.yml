@@ -1,0 +1,144 @@
+name: get-latest-win10-sdk-tools
+
+on: 
+    issue_comment: 
+        types: [created]
+
+jobs:
+    delete_win10sdk_latest:
+        name: Delete tag win10sdk_latest
+        if: ${{ !github.event.issue.pull_request && contains(github.event.issue.labels.*.name, 'get_win10sdk') && github.event.issue.user.login == 'nonwill' && github.triggering_actor == 'nonwill' && github.event.comment.user.login == 'nonwill' }}
+        runs-on: ubuntu-latest
+        steps:
+                - name: Check out Git repository
+                  uses: actions/checkout@v1
+                - name: Delete win10sdk_latest assets
+                  uses: andreaswilli/delete-release-assets-action@v3.0.0
+                  with:
+                        github_token: ${{ secrets.GITHUB_TOKEN }}
+                        tag: win10sdk_latest
+                        deleteOnlyFromDrafts: false
+
+    get_latest_win10sdk:
+        needs: delete_win10sdk_latest
+        name: Get latest win10sdk build tools
+        if: ${{ !github.event.issue.pull_request && contains(github.event.issue.labels.*.name, 'get_win10sdk') && github.event.issue.user.login == 'nonwill' && github.triggering_actor == 'nonwill' && github.event.comment.user.login == 'nonwill' }}
+        runs-on: windows-2019
+        steps:
+                - uses: ilammy/msvc-dev-cmd@v1
+                - name: Get version information
+                  id: vars
+                  shell: bash
+                  run: |
+                        echo "update_date=$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
+                        echo "win10sdk_install_dir=$WindowsSdkDir" >> $GITHUB_OUTPUT
+                        echo "win10sdk_version=${WindowsSDKVersion%\\*}" >> $GITHUB_OUTPUT
+
+                - name: win10sdk-build tools
+                  shell: cmd
+                  run: |
+                        set winSdkVer=%WindowsSDKVersion:~0,-1%
+                        echo winSdkVer=%steps.vars.outputs.win10sdk_version%
+                        echo winSdkDir=%WindowsSdkDir%
+                        mkdir WindowsSdkDir && cd WindowsSdkDir 
+                        mkdir bin && cd bin && mkdir %winSdkVer% && cd %winSdkVer% && mkdir x64 x86
+                        echo Copy SDK bin
+                        xcopy "%WindowsSdkDir%bin/%winSdkVer%/x64" x64 /Y /E /I /Q /H /C
+                        xcopy "%WindowsSdkDir%bin/%winSdkVer%/x86" x86 /Y /E /I /Q /H /C
+                        cd .. && cd .. && mkdir Debuggers && cd Debuggers && mkdir ddk inc lib x64 x86
+                        echo Copy Debuggers tools
+                        xcopy "%WindowsSdkDir%Debuggers/ddk" ddk /Y /E /I /Q /H /C
+                        xcopy "%WindowsSdkDir%Debuggers/inc" inc /Y /E /I /Q /H /C
+                        xcopy "%WindowsSdkDir%Debuggers/lib" lib /Y /E /I /Q /H /C
+                        xcopy "%WindowsSdkDir%Debuggers/x64" x64 /Y /E /I /Q /H /C
+                        xcopy "%WindowsSdkDir%Debuggers/x86" x86 /Y /E /I /Q /H /C
+                        cd .. && mkdir Include && cd Include && mkdir %winSdkVer% wdf
+                        echo Copy SDK Include
+                        xcopy "%WindowsSdkDir%Include/%winSdkVer%" %winSdkVer%  /Y /E /I /Q /H /C
+                        xcopy "%WindowsSdkDir%Include/wdf" wdf /Y /E /I /Q /H /C
+                        cd .. && mkdir Source && cd Source && mkdir %winSdkVer%
+                        echo Copy SDK Source
+                        xcopy "%WindowsSdkDir%Source/%winSdkVer%" %winSdkVer%  /Y /E /I /Q /H /C
+                        cd .. && mkdir Lib && cd Lib && mkdir %winSdkVer% wdf
+                        echo Copy SDK Lib
+                        cd wdf && mkdir kmdf umdf
+                        echo Copy wdf: kmdf - x64 and x86
+                        cd kmdf && mkdir x64 x86
+                        xcopy "%WindowsSdkDir%Lib/wdf/kmdf/x64" x64 /Y /E /I /Q /H /C
+                        xcopy "%WindowsSdkDir%Lib/wdf/kmdf/x86" x86 /Y /E /I /Q /H /C
+                        echo Copy wdf: umdf - x64 and x86
+                        cd .. && cd umdf && mkdir x64 x86
+                        xcopy "%WindowsSdkDir%Lib/wdf/umdf/x64" x64 /Y /E /I /Q /H /C
+                        xcopy "%WindowsSdkDir%Lib/wdf/umdf/x86" x86 /Y /E /I /Q /H /C
+                        echo Copy SDK Lib - %winSdkVer%
+                        cd .. && cd .. && cd %winSdkVer% && mkdir km ucrt um ucrt_enclave
+                        echo Copy km: lib - x64 and x86
+                        cd km && mkdir x64 x86
+                        xcopy "%WindowsSdkDir%Lib/%winSdkVer%/km/x64" x64 /Y /E /I /Q /H /C
+                        xcopy "%WindowsSdkDir%Lib/%winSdkVer%/km/x86" x86 /Y /E /I /Q /H /C
+                        echo Copy ucrt: lib - x64 and x86
+                        cd .. && cd ucrt && mkdir x64 x86
+                        xcopy "%WindowsSdkDir%Lib/%winSdkVer%/ucrt/x64" x64 /Y /E /I /Q /H /C
+                        xcopy "%WindowsSdkDir%Lib/%winSdkVer%/ucrt/x86" x86 /Y /E /I /Q /H /C
+                        echo Copy um: lib - x64 and x86
+                        cd .. && cd um && mkdir x64 x86
+                        xcopy "%WindowsSdkDir%Lib/%winSdkVer%/um/x64" x64 /Y /E /I /Q /H /C
+                        xcopy "%WindowsSdkDir%Lib/%winSdkVer%/um/x86" x86 /Y /E /I /Q /H /C
+                        echo Copy ucrt_enclave: lib - x64
+                        cd .. && cd ucrt_enclave && mkdir x64
+                        xcopy "%WindowsSdkDir%Lib/%winSdkVer%/ucrt_enclave/x64" x64 /Y /E /I /Q /H /C
+                        cd .. && cd .. && cd ..
+                        cd ..
+
+                - name: zip bin
+                  uses: thedoctor0/zip-release@0.7.1
+                  with:
+                        type: 'zip'
+                        path: WindowsSdkDir/bin
+                        filename: 'bin.zip'
+
+                - name: zip Debuggers
+                  uses: thedoctor0/zip-release@0.7.1
+                  with:
+                        type: 'zip'
+                        path: WindowsSdkDir/Debuggers
+                        filename: 'Debuggers.zip'
+
+                - name: zip Include
+                  uses: thedoctor0/zip-release@0.7.1
+                  with:
+                        type: 'zip'
+                        path: WindowsSdkDir/Include
+                        filename: 'Include.zip'
+
+                - name: zip Lib
+                  uses: thedoctor0/zip-release@0.7.1
+                  with:
+                        type: 'zip'
+                        path: WindowsSdkDir/Lib
+                        filename: 'Lib.zip'
+
+                - name: zip Source
+                  uses: thedoctor0/zip-release@0.7.1
+                  with:
+                        type: 'zip'
+                        path: WindowsSdkDir/Source
+                        filename: 'Source.zip'
+
+                - name: Create Release and Upload Release Asset
+                  uses: softprops/action-gh-release@v1
+                  with:
+                        tag_name: win10sdk_latest
+                        name: Latest Win10 SDK build tools for Windows x86/x64
+                        body: |
+                                date: ${{ steps.vars.outputs.update_date }}
+                                from: ${{ steps.vars.outputs.win10sdk_install_dir }}
+                                Version: ${{ steps.vars.outputs.win10sdk_version }}
+                        draft: false
+                        prerelease: false
+                        files: |
+                                bin.zip
+                                Debuggers.zip
+                                Include.zip
+                                Lib.zip
+                                Source.zip
