@@ -25,16 +25,6 @@ jobs:
     runs-on: windows-2019
     steps:
     - uses: actions/checkout@v3
-    - name: Setup Visual C++ Environment
-      uses: ilammy/msvc-dev-cmd@v1
-
-    - name: Get date and C++ version info
-      id: vars
-      shell: bash
-      run: |
-        echo "update_date=$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
-        echo "vc_install_dir=$VCToolsInstallDir" >> $GITHUB_OUTPUT
-        echo "cl_exe_info=$(cl > cl_version 2>&1 && head -n 1 cl_version)" >> $GITHUB_OUTPUT
 
     - name: Install or Download Dependencies
       run: |
@@ -51,11 +41,10 @@ jobs:
         dir
         ${{ github.workspace }}/deps/jom/jom.exe /VERSION
 
-    - name: Build OpenCV-${{ env.OPENCV_VERSION }}
+    - name: MinGW Build OpenCV-${{ env.OPENCV_VERSION }}
       shell: bash
       run: |
         export WSP_ROOT=$PWD
-        export PATH=$WSP_ROOT/deps/jom:$PATH
         export USER_MINGW_DIR=$WSP_ROOT/deps/mingw64
         tar -xf opencv-${{ env.OPENCV_VERSION }}.tar.gz
         rm -f opencv-${{ env.OPENCV_VERSION }}.tar.gz
@@ -101,6 +90,23 @@ jobs:
         echo ~~~~~~~~~~~~ mingw64 build end ~~~~~~~~~~~~
         rm -rf $WSP_ROOT/opencv-${{ env.OPENCV_VERSION }}-mingw64
         rm -rf $USER_MINGW_DIR/*
+
+    - name: Setup msvc2019 x64 Environment
+      uses: ilammy/msvc-dev-cmd@v1
+
+    - name: Get date and Cl version
+      id: vars
+      shell: bash
+      run: |
+        echo "update_date=$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
+        echo "vc_install_dir=$VCToolsInstallDir" >> $GITHUB_OUTPUT
+        echo "cl_exe_info=$(cl > cl_version 2>&1 && head -n 1 cl_version)" >> $GITHUB_OUTPUT
+
+    - name: msvc2019 x64 Build OpenCV-${{ env.OPENCV_VERSION }}
+      shell: bash
+      run: |
+        export WSP_ROOT=$PWD
+        export PATH=$WSP_ROOT/deps/jom:$PATH
         echo ~~~~~~~~~~~~ msvc2019 build begin ~~~~~~~~~~~~
         cl
         cd build
@@ -118,6 +124,34 @@ jobs:
         cd ..
         echo ~~~~~~~~~~~~ msvc2019 build end ~~~~~~~~~~~~
         rm -rf $WSP_ROOT/opencv-${{ env.OPENCV_VERSION }}-msvc2019-x64
+
+    - name: Setup msvc2019 x86 Environment
+      uses: ilammy/msvc-dev-cmd@v1
+      with:
+        arch: amd64_x86
+
+    - name: msvc2019 x86 Build OpenCV-${{ env.OPENCV_VERSION }}
+      shell: bash
+      run: |
+        export WSP_ROOT=$PWD
+        export PATH=$WSP_ROOT/deps/jom:$PATH
+        echo ~~~~~~~~~~~~ msvc2019 build begin ~~~~~~~~~~~~
+        cl
+        cd build
+        cmake ../opencv-${{ env.OPENCV_VERSION }} \
+            -G "NMake Makefiles" \
+            -DCMAKE_MAKE_PROGRAM=$WSP_ROOT/deps/jom/jom.exe \
+            -DCMAKE_INSTALL_PREFIX=$WSP_ROOT/opencv-${{ env.OPENCV_VERSION }}-msvc2019-x86 \
+            `cat ../opencv-options.txt` \
+            -DBUILD_opencv_world=ON && \
+            jom -j4 && jom install
+        rm -rf ./*
+        cd ..
+        cd $WSP_ROOT/opencv-${{ env.OPENCV_VERSION }}-msvc2019-x86
+        7z -mx5 a ../opencv-${{ env.OPENCV_VERSION }}-msvc2019-x86.7z *
+        cd ..
+        echo ~~~~~~~~~~~~ msvc2019 build end ~~~~~~~~~~~~
+        rm -rf $WSP_ROOT/opencv-${{ env.OPENCV_VERSION }}-msvc2019-x86
 
     - name: Upload opencv-${{ env.OPENCV_VERSION }}
       uses: softprops/action-gh-release@v2
