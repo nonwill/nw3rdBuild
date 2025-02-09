@@ -62,6 +62,7 @@ jobs:
             mingw32-make -j4 && mingw32-make install
         rm -rf ./*
         cd ..
+        strip $WSP_ROOT/oneDNN-${{ env.ONEDNN_VERSION }}-mingw64/bin/*.dll
         cd $WSP_ROOT/oneDNN-${{ env.ONEDNN_VERSION }}-mingw64
         7z -mx5 a ../oneDNN-${{ env.ONEDNN_VERSION }}-mingw64-x86_64.7z *
         cd ..

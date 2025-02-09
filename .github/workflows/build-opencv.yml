@@ -64,6 +64,7 @@ jobs:
             mingw32-make -j4 && mingw32-make install
         rm -rf ./*
         cd ..
+        strip $WSP_ROOT/opencv-${{ env.OPENCV_VERSION }}-mingw64/x64/mingw/bin/*.dll
         cd $WSP_ROOT/opencv-${{ env.OPENCV_VERSION }}-mingw64
         7z -mx5 a ../opencv-${{ env.OPENCV_VERSION }}-mingw64-i686.7z *
         cd ..
@@ -84,6 +85,7 @@ jobs:
             mingw32-make -j4 && mingw32-make install
         rm -rf ./*
         cd ..
+        strip $WSP_ROOT/opencv-${{ env.OPENCV_VERSION }}-mingw64/x64/mingw/bin/*.dll
         cd $WSP_ROOT/opencv-${{ env.OPENCV_VERSION }}-mingw64
         7z -mx5 a ../opencv-${{ env.OPENCV_VERSION }}-mingw64-x86_64.7z *
         cd ..
