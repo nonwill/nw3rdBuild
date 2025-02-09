@@ -36,7 +36,6 @@ jobs:
         curl -L https://download.qt.io/official_releases/jom/jom.zip -o jom.zip
         unzip jom.zip -d ${{ github.workspace }}/deps/jom
         curl -L https://github.com/oneapi-src/oneDNN/archive/refs/tags/v${{ env.ONEDNN_VERSION }}.tar.gz -o oneDNN-${{ env.ONEDNN_VERSION }}.tar.gz
-        curl -L https://github.com/nonwill/mingw-distro/releases/download/mingw64-gcc-crt_latest/mingw-w64+gcc-i686-all.7z -o mingw-w64_gcc-i686-all.7z
         curl -L https://github.com/nonwill/mingw-distro/releases/download/mingw64-gcc-crt_latest/mingw-w64+gcc-x86_64-all.7z -o mingw-w64_gcc-x86_64-all.7z
         dir
         ${{ github.workspace }}/deps/jom/jom.exe /VERSION
@@ -49,29 +48,10 @@ jobs:
         tar -xf oneDNN-${{ env.ONEDNN_VERSION }}.tar.gz
         rm -f oneDNN-${{ env.ONEDNN_VERSION }}.tar.gz
         mkdir build
-        echo ~~~~~~~~~~~~ mingw32 build prepare ~~~~~~~~~~~~
-        7z x mingw-w64_gcc-i686-all.7z -r -o$USER_MINGW_DIR
-        rm -f mingw-w64_gcc-i686-all.7z
-        export PATH=$USER_MINGW_DIR/bin:$PATH
-        gcc -v
-        echo ~~~~~~~~~~~~ mingw32 build begin ~~~~~~~~~~~~
-        cd build
-        cmake ../oneDNN-${{ env.ONEDNN_VERSION }} \
-            -G "MinGW Makefiles" \
-            -DCMAKE_INSTALL_PREFIX=$WSP_ROOT/oneDNN-${{ env.ONEDNN_VERSION }}-mingw64 \
-            `cat ../oneDNN-options.txt` && \
-            mingw32-make -j4 && mingw32-make install
-        rm -rf ./*
-        cd ..
-        cd $WSP_ROOT/oneDNN-${{ env.ONEDNN_VERSION }}-mingw64
-        7z -mx5 a ../oneDNN-${{ env.ONEDNN_VERSION }}-mingw64-i686.7z *
-        cd ..
-        echo ~~~~~~~~~~~~ mingw32 build end ~~~~~~~~~~~~
-        rm -rf $WSP_ROOT/oneDNN-${{ env.ONEDNN_VERSION }}-mingw64
-        rm -rf $USER_MINGW_DIR/*
         echo ~~~~~~~~~~~~ mingw64 build prepare ~~~~~~~~~~~~
         7z x mingw-w64_gcc-x86_64-all.7z -r -o$USER_MINGW_DIR
         rm -f mingw-w64_gcc-x86_64-all.7z
+        export PATH=$USER_MINGW_DIR/bin:$PATH
         gcc -v
         echo ~~~~~~~~~~~~ mingw64 build begin ~~~~~~~~~~~~
         cd build
@@ -121,33 +101,6 @@ jobs:
         cd ..
         echo ~~~~~~~~~~~~ msvc2019 build end ~~~~~~~~~~~~
         rm -rf $WSP_ROOT/oneDNN-${{ env.ONEDNN_VERSION }}-msvc2019-x64
-
-    - name: Setup msvc2019 x86 Environment
-      uses: ilammy/msvc-dev-cmd@v1
-      with:
-        arch: amd64_x86
-
-    - name: msvc2019 x86 Build oneDNN-${{ env.ONEDNN_VERSION }}
-      shell: bash
-      run: |
-        export WSP_ROOT=$PWD
-        export PATH=$WSP_ROOT/deps/jom:$PATH
-        echo ~~~~~~~~~~~~ msvc2019 build begin ~~~~~~~~~~~~
-        cl
-        cd build
-        cmake ../oneDNN-${{ env.ONEDNN_VERSION }} \
-            -G "NMake Makefiles" \
-            -DCMAKE_MAKE_PROGRAM=$WSP_ROOT/deps/jom/jom.exe \
-            -DCMAKE_INSTALL_PREFIX=$WSP_ROOT/oneDNN-${{ env.ONEDNN_VERSION }}-msvc2019-x86 \
-            `cat ../oneDNN-options.txt` && \
-            jom -j4 && jom install
-        rm -rf ./*
-        cd ..
-        cd $WSP_ROOT/oneDNN-${{ env.ONEDNN_VERSION }}-msvc2019-x86
-        7z -mx5 a ../oneDNN-${{ env.ONEDNN_VERSION }}-msvc2019-x86.7z *
-        cd ..
-        echo ~~~~~~~~~~~~ msvc2019 build end ~~~~~~~~~~~~
-        rm -rf $WSP_ROOT/oneDNN-${{ env.ONEDNN_VERSION }}-msvc2019-x86
 
     - name: Upload oneDNN-${{ env.ONEDNN_VERSION }}
       uses: softprops/action-gh-release@v2
