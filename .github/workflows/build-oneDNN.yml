@@ -28,8 +28,8 @@ jobs:
 
     - name: Install or Download Dependencies
       run: |
-        choco install curl unzip 7zip
-        choco install cmake
+        choco install curl unzip 7zip -y
+        choco install cmake -y
         cmake --version
         mkdir deps
         cd deps && mkdir mingw64 && cd ..
