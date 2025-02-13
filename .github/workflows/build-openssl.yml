@@ -82,12 +82,12 @@ jobs:
         cl.exe
         tar -xf openssl-${{ env.OpenSSL_VERSION }}.tar.gz
         cd openssl-openssl-${{ env.OpenSSL_VERSION }}
-        perl.exe Configure \
-            `cat ../openssl-options.txt` \
+        msys2 -c 'perl.exe Configure \
+            no-asm no-idea no-mdc2 no-rc5 shared \
             VC-WIN64A \
             --prefix=$WSP_ROOT/openssl-${{ env.OpenSSL_VERSION }}-msvc2019-x64 \
             --openssldir=$WSP_ROOT/openssl-${{ env.OpenSSL_VERSION }}-msvc2019-x64/ssl && \
-            jom -j4 && jom install_sw
+            jom -j4 && jom install_sw'
         cd ..
         cd $WSP_ROOT/openssl-${{ env.OpenSSL_VERSION }}-msvc2019-x64
         7z -mx5 a ../openssl-${{ env.OpenSSL_VERSION }}-msvc2019-x64.7z *
@@ -110,12 +110,12 @@ jobs:
         cl.exe
         tar -xf openssl-${{ env.OpenSSL_VERSION }}.tar.gz
         cd openssl-openssl-${{ env.OpenSSL_VERSION }}
-        perl.exe Configure \
-            `cat ../openssl-options.txt` \
+        msys2 -c 'perl.exe Configure \
+            no-asm no-idea no-mdc2 no-rc5 shared \
             VC-WIN32 \
             --prefix=$WSP_ROOT/openssl-${{ env.OpenSSL_VERSION }}-msvc2019-x86 \
             --openssldir=$WSP_ROOT/openssl-${{ env.OpenSSL_VERSION }}-msvc2019-x86/ssl && \
-           jom -j4 && jom install_sw
+           jom -j4 && jom install_sw'
         cd ..
         cd $WSP_ROOT/openssl-${{ env.OpenSSL_VERSION }}-msvc2019-x86
         7z -mx5 a ../openssl-${{ env.OpenSSL_VERSION }}-msvc2019-x86.7z *
