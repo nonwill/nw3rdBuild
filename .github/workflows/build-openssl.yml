@@ -1,0 +1,171 @@
+name: Build OpenSSL with mingw64 and msvc2019
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/build-openssl.yml'
+
+env:
+  OpenSSL_VERSION: "3.4.1"
+
+jobs:
+  delete_assets:
+    name: Delete Assets
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - uses: andreaswilli/delete-release-assets-action@v4.0.0
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        tag: openssl-${{ env.OpenSSL_VERSION }}
+        deleteOnlyFromDrafts: false
+
+  build_with_windows-2019:
+    needs: delete_assets
+    runs-on: windows-2019
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Install or Download Dependencies
+      run: |
+        choco install curl unzip 7zip -y
+        choco install perl -y
+        perl --version
+        mkdir deps
+        cd deps && mkdir mingw64 && cd ..
+        curl -L https://download.qt.io/official_releases/jom/jom.zip -o jom.zip
+        unzip jom.zip -d ${{ github.workspace }}/deps/jom
+        curl -L https://github.com/openssl/openssl/archive/refs/tags/openssl-{{ env.OpenSSL_VERSION }}.tar.gz -o openssl-{{ env.OpenSSL_VERSION }}.tar.gz
+        curl -L https://github.com/nonwill/mingw-distro/releases/download/mingw64-gcc-crt_latest/mingw-w64+gcc-i686-all.7z -o mingw-w64_gcc-i686-all.7z
+        curl -L https://github.com/nonwill/mingw-distro/releases/download/mingw64-gcc-crt_latest/mingw-w64+gcc-x86_64-all.7z -o mingw-w64_gcc-x86_64-all.7z
+        dir
+        ${{ github.workspace }}/deps/jom/jom.exe /VERSION
+
+    - name: MinGW Build OpenSSL-${{ env.OpenSSL_VERSION }}
+      shell: bash
+      run: |
+        export WSP_ROOT=$PWD
+        export USER_MINGW_DIR=$WSP_ROOT/deps/mingw64
+        echo ~~~~~~~~~~~~ mingw32 build prepare ~~~~~~~~~~~~
+        7z x mingw-w64_gcc-i686-all.7z -r -o$USER_MINGW_DIR
+        rm -f mingw-w64_gcc-i686-all.7z
+        export PATH=$USER_MINGW_DIR/bin:$PATH
+        gcc -v
+        echo ~~~~~~~~~~~~ mingw32 build begin ~~~~~~~~~~~~
+        tar -xf openssl-${{ env.OpenSSL_VERSION }}.tar.gz
+        cd openssl-openssl-${{ env.OpenSSL_VERSION }}
+        perl Configure \
+            `cat ../openssl-options.txt` \
+            mingw \
+            --prefix=$WSP_ROOT/openssl-${{ env.OpenSSL_VERSION }}-mingw64 \
+            --openssldir=$WSP_ROOT/openssl-${{ env.OpenSSL_VERSION }}-mingw64/ssl && \
+            mingw32-make -j4 && mingw32-make install
+        cd ..
+        strip $WSP_ROOT/openssl-${{ env.OpenSSL_VERSION }}-mingw64/bin/*.dll
+        strip $WSP_ROOT/openssl-${{ env.OpenSSL_VERSION }}-mingw64/bin/*.exe
+        cd $WSP_ROOT/openssl-${{ env.OpenSSL_VERSION }}-mingw64
+        7z -mx5 a ../openssl-${{ env.OpenSSL_VERSION }}-mingw64-i686.7z *
+        cd ..
+        echo ~~~~~~~~~~~~ mingw32 build end ~~~~~~~~~~~~
+        rm -rf openssl-openssl-${{ env.OpenSSL_VERSION }}
+        rm -rf $WSP_ROOT/openssl-${{ env.OpenSSL_VERSION }}-mingw64
+        rm -rf $USER_MINGW_DIR/*
+        echo ~~~~~~~~~~~~ mingw64 build prepare ~~~~~~~~~~~~
+        7z x mingw-w64_gcc-x86_64-all.7z -r -o$USER_MINGW_DIR
+        rm -f mingw-w64_gcc-x86_64-all.7z
+        gcc -v
+        echo ~~~~~~~~~~~~ mingw64 build begin ~~~~~~~~~~~~
+        tar -xf openssl-${{ env.OpenSSL_VERSION }}.tar.gz
+        cd openssl-openssl-${{ env.OpenSSL_VERSION }}
+        perl Configure \
+            `cat ../openssl-options.txt` \
+            mingw64 \
+            --prefix=$WSP_ROOT/openssl-${{ env.OpenSSL_VERSION }}-mingw64 \
+            --openssldir=$WSP_ROOT/openssl-${{ env.OpenSSL_VERSION }}-mingw64/ssl && \
+            mingw32-make -j4 && mingw32-make install
+        cd ..
+        strip $WSP_ROOT/openssl-${{ env.OpenSSL_VERSION }}-mingw64/bin/*.dll
+        strip $WSP_ROOT/openssl-${{ env.OpenSSL_VERSION }}-mingw64/bin/*.exe
+        cd $WSP_ROOT/openssl-${{ env.OpenSSL_VERSION }}-mingw64
+        7z -mx5 a ../OpenSSL-${{ env.OpenSSL_VERSION }}-mingw64-x86_64.7z *
+        cd ..
+        echo ~~~~~~~~~~~~ mingw64 build end ~~~~~~~~~~~~
+        rm -rf openssl-openssl-${{ env.OpenSSL_VERSION }}
+        rm -rf $WSP_ROOT/openssl-${{ env.OpenSSL_VERSION }}-mingw64
+        rm -rf $USER_MINGW_DIR/*
+
+    - name: Setup msvc2019 x64 Environment
+      uses: ilammy/msvc-dev-cmd@v1
+
+    - name: Get date and Cl version
+      id: vars
+      shell: bash
+      run: |
+        echo "update_date=$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
+        echo "vc_install_dir=$VCToolsInstallDir" >> $GITHUB_OUTPUT
+        echo "cl_exe_info=$(cl > cl_version 2>&1 && head -n 1 cl_version)" >> $GITHUB_OUTPUT
+
+    - name: msvc2019 x64 Build OpenSSL-${{ env.OpenSSL_VERSION }}
+      shell: bash
+      run: |
+        export WSP_ROOT=$PWD
+        export PATH=$WSP_ROOT/deps/jom:$PATH
+        echo ~~~~~~~~~~~~ msvc2019 build begin ~~~~~~~~~~~~
+        cl
+        tar -xf openssl-${{ env.OpenSSL_VERSION }}.tar.gz
+        cd openssl-openssl-${{ env.OpenSSL_VERSION }}
+        perl Configure \
+            `cat ../openssl-options.txt` \
+            VC-WIN64A \
+            --prefix=$WSP_ROOT/openssl-${{ env.OpenSSL_VERSION }}-msvc2019-x64 \
+            --openssldir=$WSP_ROOT/openssl-${{ env.OpenSSL_VERSION }}-msvc2019-x64/ssl && \
+            jom -j4 && jom install
+        cd ..
+        cd $WSP_ROOT/openssl-${{ env.OpenSSL_VERSION }}-msvc2019-x64
+        7z -mx5 a ../openssl-${{ env.OpenSSL_VERSION }}-msvc2019-x64.7z *
+        cd ..
+        echo ~~~~~~~~~~~~ msvc2019 build end ~~~~~~~~~~~~
+        rm -rf openssl-openssl-${{ env.OpenSSL_VERSION }}
+        rm -rf $WSP_ROOT/openssl-${{ env.OpenSSL_VERSION }}-msvc2019-x64
+
+    - name: Setup msvc2019 x86 Environment
+      uses: ilammy/msvc-dev-cmd@v1
+      with:
+        arch: amd64_x86
+
+    - name: msvc2019 x86 Build OpenSSL-${{ env.OpenSSL_VERSION }}
+      shell: bash
+      run: |
+        export WSP_ROOT=$PWD
+        export PATH=$WSP_ROOT/deps/jom:$PATH
+        echo ~~~~~~~~~~~~ msvc2019 build begin ~~~~~~~~~~~~
+        cl
+        tar -xf openssl-${{ env.OpenSSL_VERSION }}.tar.gz
+        cd openssl-openssl-${{ env.OpenSSL_VERSION }}
+        perl Configure \
+            `cat ../openssl-options.txt` \
+            VC-WIN32 \
+            --prefix=$WSP_ROOT/openssl-${{ env.OpenSSL_VERSION }}-msvc2019-x86 \
+            --openssldir=$WSP_ROOT/openssl-${{ env.OpenSSL_VERSION }}-msvc2019-x86/ssl && \
+           jom -j4 && jom install
+        cd ..
+        cd $WSP_ROOT/openssl-${{ env.OpenSSL_VERSION }}-msvc2019-x86
+        7z -mx5 a ../openssl-${{ env.OpenSSL_VERSION }}-msvc2019-x86.7z *
+        cd ..
+        echo ~~~~~~~~~~~~ msvc2019 build end ~~~~~~~~~~~~
+        rm -rf openssl-openssl-${{ env.OpenSSL_VERSION }}
+        rm -rf $WSP_ROOT/openssl-${{ env.OpenSSL_VERSION }}-msvc2019-x86
+
+    - name: Upload OpenSSL-${{ env.OpenSSL_VERSION }}
+      uses: softprops/action-gh-release@v2
+      with:
+        tag_name: openssl-${{ env.OpenSSL_VERSION }}
+        name: Latest build of OpenSSL-${{ env.OpenSSL_VERSION }}
+        body: |
+          date: ${{ steps.vars.outputs.update_date }}
+          cl.exe: ${{ steps.vars.outputs.cl_exe_info }}
+        draft: false
+        prerelease: false
+        files: |
+          ./openssl-${{ env.OpenSSL_VERSION }}-*.7z

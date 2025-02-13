@@ -18,7 +18,7 @@ jobs:
     - uses: andreaswilli/delete-release-assets-action@v4.0.0
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
-        tag: protobuf-${{ env.PROTOBUF_VERSION }}
+        tag: protobuf-3.${{ env.PROTOBUF_VERSION }}
         deleteOnlyFromDrafts: false
 
   build_with_windows-2019:
@@ -42,7 +42,7 @@ jobs:
         dir
         ${{ github.workspace }}/deps/jom/jom.exe /VERSION
 
-    - name: MinGW Build Protocol Buffers-${{ env.PROTOBUF_VERSION }}
+    - name: MinGW Build Protocol Buffers ${{ env.PROTOBUF_VERSION }}
       shell: bash
       run: |
         export WSP_ROOT=$PWD
@@ -103,7 +103,7 @@ jobs:
         echo "vc_install_dir=$VCToolsInstallDir" >> $GITHUB_OUTPUT
         echo "cl_exe_info=$(cl > cl_version 2>&1 && head -n 1 cl_version)" >> $GITHUB_OUTPUT
 
-    - name: msvc2019 x64 Build Protocol Buffers-${{ env.PROTOBUF_VERSION }}
+    - name: msvc2019 x64 Build Protocol Buffers ${{ env.PROTOBUF_VERSION }}
       shell: bash
       run: |
         export WSP_ROOT=$PWD
@@ -130,7 +130,7 @@ jobs:
       with:
         arch: amd64_x86
 
-    - name: msvc2019 x86 Build Protocol Buffers-${{ env.PROTOBUF_VERSION }}
+    - name: msvc2019 x86 Build Protocol Buffers ${{ env.PROTOBUF_VERSION }}
       shell: bash
       run: |
         export WSP_ROOT=$PWD
@@ -152,7 +152,7 @@ jobs:
         echo ~~~~~~~~~~~~ msvc2019 build end ~~~~~~~~~~~~
         rm -rf $WSP_ROOT/protobuf-${{ env.PROTOBUF_VERSION }}-msvc2019-x86
 
-    - name: Upload protobuf-${{ env.PROTOBUF_VERSION }}
+    - name: Upload Protocol Buffers ${{ env.PROTOBUF_VERSION }}
       uses: softprops/action-gh-release@v2
       with:
         tag_name: protobuf-3.${{ env.PROTOBUF_VERSION }}
