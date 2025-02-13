@@ -1,16 +1,18 @@
 name: Build OpenCV with mingw64 and msvc2019
 
 on:
-  issue_comment:
-    types: [created]
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/build-opencv.yml'
+      - 'opencv-options.txt'
 
 env:
-  OPENCV_VERSION: "3.4.20"
+  OPENCV_VERSION: "4.11.0"
 
 jobs:
   delete_assets:
     name: Delete Assets
-    if: ${{ !github.event.issue.pull_request && contains(github.event.issue.labels.*.name, 'build_opencv') && github.event.issue.user.login == 'nonwill' && github.triggering_actor == 'nonwill' && github.event.comment.user.login == 'nonwill' }}
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
@@ -24,7 +26,7 @@ jobs:
     needs: delete_assets
     runs-on: windows-2019
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - name: Install or Download Dependencies
       run: |
