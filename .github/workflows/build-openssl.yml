@@ -46,7 +46,7 @@ jobs:
         cl.exe
         tar -xf openssl-${{ env.OpenSSL_VERSION }}.tar.gz
         cd openssl-openssl-${{ env.OpenSSL_VERSION }}
-        perl.exe Configure no-asm no-idea no-mdc2 no-rc5 shared VC-WIN64A --prefix=${{ github.workspace }}/openssl-${{ env.OpenSSL_VERSION }}-msvc2019-x64 --openssldir=${{ github.workspace }}/openssl-${{ env.OpenSSL_VERSION }}-msvc2019-x64/ssl && nmake -j4 && nmake install_sw
+        perl.exe Configure no-asm no-idea no-mdc2 no-rc5 shared VC-WIN64A --prefix=${{ github.workspace }}/openssl-${{ env.OpenSSL_VERSION }}-msvc2019-x64 --openssldir=${{ github.workspace }}/openssl-${{ env.OpenSSL_VERSION }}-msvc2019-x64/ssl && nmake && nmake install_sw
         cd ..
         cd ${{ github.workspace }}/openssl-${{ env.OpenSSL_VERSION }}-msvc2019-x64 && 7z -mx5 a ../openssl-${{ env.OpenSSL_VERSION }}-msvc2019-x64.7z *
         cd ..
@@ -67,7 +67,7 @@ jobs:
         cl.exe
         tar -xf openssl-${{ env.OpenSSL_VERSION }}.tar.gz
         cd openssl-openssl-${{ env.OpenSSL_VERSION }}
-        perl.exe Configure no-asm no-idea no-mdc2 no-rc5 shared VC-WIN32 --prefix=${{ github.workspace }}/openssl-${{ env.OpenSSL_VERSION }}-msvc2019-x86 --openssldir=${{ github.workspace }}/openssl-${{ env.OpenSSL_VERSION }}-msvc2019-x86/ssl && nmake -j4 && nmake install_sw
+        perl.exe Configure no-asm no-idea no-mdc2 no-rc5 shared VC-WIN32 --prefix=${{ github.workspace }}/openssl-${{ env.OpenSSL_VERSION }}-msvc2019-x86 --openssldir=${{ github.workspace }}/openssl-${{ env.OpenSSL_VERSION }}-msvc2019-x86/ssl && nmake && nmake install_sw
         cd ..
         cd ${{ github.workspace }}/openssl-${{ env.OpenSSL_VERSION }}-msvc2019-x86 && 7z -mx5 a ../openssl-${{ env.OpenSSL_VERSION }}-msvc2019-x86.7z *
         cd ..
