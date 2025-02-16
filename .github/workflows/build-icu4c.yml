@@ -49,7 +49,7 @@ jobs:
         echo ~~~~~~~~~~~~ msvc2019 build begin ~~~~~~~~~~~~
         cl.exe
         export CL=
-        tar -xf icu4c-${{ env.ICU4C_VERSION }}.tar.gz
+        tar -xf icu4c-${{ env.ICU4C_VERSION }}.tgz
         cd icu/source
         rm -f config/mh-unknown && mv config/mh-msys-msvc config/mh-unknown
         mkdir -p data/tmp
@@ -74,7 +74,7 @@ jobs:
         echo ~~~~~~~~~~~~ msvc2019 build begin ~~~~~~~~~~~~
         cl.exe
         export CL=
-        tar -xf icu4c-${{ env.ICU4C_VERSION }}.tar.gz
+        tar -xf icu4c-${{ env.ICU4C_VERSION }}.tgz
         cd icu/source
         rm -f config/mh-unknown && mv config/mh-msys-msvc config/mh-unknown
         mkdir -p data/tmp
@@ -145,7 +145,7 @@ jobs:
         export PATH=$USER_MINGW_DIR/bin:$PATH
         gcc -v
         echo ~~~~~~~~~~~~ mingw32 build begin ~~~~~~~~~~~~
-        tar -xf icu4c-${{ env.ICU4C_VERSION }}.tar.gz
+        tar -xf icu4c-${{ env.ICU4C_VERSION }}.tgz
         cd icu/source
         ./runConfigureICU  MinGW  --prefix=${{ github.workspace }}/icu4c-${{ env.ICU4C_VERSION }}-mingw64 \
             CXXFLAGS=-std=gnu++17 && make -j 4 && make install
@@ -164,7 +164,7 @@ jobs:
         rm -f mingw-w64_gcc-x86_64-all.7z
         gcc -v
         echo ~~~~~~~~~~~~ mingw64 build begin ~~~~~~~~~~~~
-        tar -xf icu4c-${{ env.ICU4C_VERSION }}.tar.gz
+        tar -xf icu4c-${{ env.ICU4C_VERSION }}.tgz
         cd icu/source
         ./runConfigureICU  MinGW  --prefix=${{ github.workspace }}/icu4c-${{ env.ICU4C_VERSION }}-mingw64 \
             CXXFLAGS=-std=gnu++17 && make -j 4 && make install
