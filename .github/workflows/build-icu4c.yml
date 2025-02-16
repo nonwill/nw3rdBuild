@@ -22,8 +22,66 @@ jobs:
         tag: icu4c-${{ env.ICU4C_VERSION }}
         deleteOnlyFromDrafts: false
 
-  build_with_mingw-gcc14:
+
+  # Windows MSVC distribution release
+  windows-msvc-2019:
     needs: delete_assets
+    runs-on: windows-2019
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: 'x64'
+            plat: 'x64'
+            win_ver: 'Win64'
+          - arch: 'x86'
+            plat: 'Win32'
+            win_ver: 'Win32'
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install or Download Dependencies
+      run: |
+        mkdir deps
+        cd deps && mkdir mingw64 && cd ..
+        curl -L https://github.com/unicode-org/icu/releases/download/release-${{ env.ICU4C_VERREL }}/icu4c-${{ env.ICU4C_VERSION }}-src.tgz -o icu4c-${{ env.ICU4C_VERSION }}.tgz
+        dir
+        tar -xf icu4c-${{ env.ICU4C_VERSION }}.tgz
+        dir
+
+    - name: Set up MSBuild
+      uses: microsoft/setup-msbuild@v2
+
+    - name: Build Solution
+      run: msbuild icu/source/allinone/allinone.sln /p:Configuration=Release /p:Platform=${{ matrix.plat }} /p:SkipUWP=true
+    - name: Run Tests (icucheck.bat)
+      run: icu/source/allinone/icucheck.bat ${{ matrix.arch }} Release
+    - name: "Run PowerShell: Distrelease script (${{ matrix.arch }})"
+      shell: pwsh
+      run: |
+        cd ./icu/
+        ./packaging/distrelease.ps1 -arch ${{ matrix.arch }}
+    - name: Extract ICU version and rename zip file
+      id: set-zip-name
+      run: |
+        $newZipName = "icu4c-${{ env.ICU4C_VERSION }}-msvc2019-${{ matrix.arch }}"
+        Write-Host "New Zip Name: $newZipName"
+        # Rename the existing zip file
+        cd icu\source\dist\ && ls -l .
+        Rename-Item -Path icu-windows.zip -NewName "${newZipName}.zip"
+        ls -l .
+    - name: Upload icu4c-${{ env.ICU4C_VERSION }}
+      uses: softprops/action-gh-release@v2
+      with:
+        tag_name: icu4c-${{ env.ICU4C_VERSION }}
+        name: Latest build of icu4c-${{ env.ICU4C_VERSION }}
+        draft: false
+        prerelease: false
+        files: |
+          ./icu/source/dist/icu4c-${{ env.ICU4C_VERSION }}-*.zip
+
+  build_with_mingw-gcc14:
+    needs: windows-msvc-2019
     runs-on: windows-2019
     defaults:
       run:
