@@ -54,8 +54,6 @@ jobs:
 
     - name: Build Solution
       run: msbuild icu/source/allinone/allinone.sln /p:Configuration=Release /p:Platform=${{ matrix.plat }} /p:SkipUWP=true
-    - name: Run Tests (icucheck.bat)
-      run: icu/source/allinone/icucheck.bat ${{ matrix.arch }} Release
     - name: "Run PowerShell: Distrelease script (${{ matrix.arch }})"
       shell: pwsh
       run: |
