@@ -7,8 +7,8 @@ on:
       - '.github/workflows/build-icu4c.yml'
 
 env:
-  ICU4C_VERSION: "74_2"
-  ICU4C_VERREL: "74-2"
+  ICU4C_VERSION: "75_1"
+  ICU4C_VERREL: "75-1"
 
 jobs:
   delete_assets:
@@ -180,9 +180,10 @@ jobs:
         name: Latest build of icu4c-${{ env.ICU4C_VERSION }}
         body: |
           date: ${{ steps.vars.outputs.update_date }}
-          gcc.exe: ${{ steps.vars.outputs.gcc_exe_info }}
-          cl.exe: ${{ steps.vars.outputs.cl_exe_info }}
+          cl.exe ${{ steps.vars.outputs.cl_exe_info }}
+          ${{ steps.vars.outputs.gcc_exe_info }}
         draft: false
         prerelease: false
+        make_latest: true
         files: |
           ./icu4c-${{ env.ICU4C_VERSION }}-*.7z

@@ -8,7 +8,7 @@ on:
       - 'oneDNN-options.txt'
 
 env:
-  ONEDNN_VERSION: "3.5.3"
+  ONEDNN_VERSION: "3.4.4"
 
 jobs:
   delete_assets:
@@ -115,9 +115,10 @@ jobs:
         name: Latest build of oneDNN-${{ env.ONEDNN_VERSION }}
         body: |
           date: ${{ steps.vars.outputs.update_date }}
-          cl.exe: ${{ steps.vars.outputs.cl_exe_info }}
-          gcc.exe: ${{ steps.vars.outputs.gcc_exe_info }}
+          cl.exe ${{ steps.vars.outputs.cl_exe_info }}
+          ${{ steps.vars.outputs.gcc_exe_info }}
         draft: false
         prerelease: false
+        make_latest: true
         files: |
           ./oneDNN-${{ env.ONEDNN_VERSION }}-*.7z

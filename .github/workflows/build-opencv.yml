@@ -8,7 +8,7 @@ on:
       - 'opencv-options.txt'
 
 env:
-  OPENCV_VERSION: "4.8.1"
+  OPENCV_VERSION: "4.5.5"
 
 jobs:
   delete_assets:
@@ -167,9 +167,10 @@ jobs:
         name: Latest build of opencv-${{ env.OPENCV_VERSION }}
         body: |
           date: ${{ steps.vars.outputs.update_date }}
-          cl.exe: ${{ steps.vars.outputs.cl_exe_info }}
-          gcc.exe: ${{ steps.vars.outputs.gcc_exe_info }}
+          cl.exe ${{ steps.vars.outputs.cl_exe_info }}
+          ${{ steps.vars.outputs.gcc_exe_info }}
         draft: false
         prerelease: false
+        make_latest: true
         files: |
           ./opencv-${{ env.OPENCV_VERSION }}-*.7z
