@@ -13,7 +13,6 @@ env:
 jobs:
   delete_assets:
     name: Delete Assets
-    if: ${{ !github.event.issue.pull_request && contains(github.event.issue.labels.*.name, 'build_onednn') && github.event.issue.user.login == 'nonwill' && github.triggering_actor == 'nonwill' && github.event.comment.user.login == 'nonwill' }}
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
