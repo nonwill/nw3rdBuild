@@ -8,7 +8,7 @@ on:
       - 'opencv-options.txt'
 
 env:
-  OPENCV_VERSION: "4.5.5"
+  OPENCV_VERSION: "4.11.0"
 
 jobs:
   delete_assets:
@@ -108,6 +108,7 @@ jobs:
         echo "vc_install_dir=$VCToolsInstallDir" >> $GITHUB_OUTPUT
         echo "cl_exe_info=$(cl > cl_version 2>&1 && head -n 1 cl_version)" >> $GITHUB_OUTPUT
         echo "gcc_exe_info=$(gcc --version > gcc_version 2>&1 && head -n 1 gcc_version)" >> $GITHUB_OUTPUT
+        rm -rf $USER_MINGW_DIR
 
     - name: msvc2019 x64 Build OpenCV-${{ env.OPENCV_VERSION }}
       shell: bash
