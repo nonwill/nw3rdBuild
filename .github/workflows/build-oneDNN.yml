@@ -8,7 +8,7 @@ on:
       - 'oneDNN-options.txt'
 
 env:
-  ONEDNN_VERSION: "3.7.1"
+  ONEDNN_VERSION: "3.7.2"
 
 jobs:
   delete_assets:
