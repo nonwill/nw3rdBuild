@@ -8,7 +8,7 @@ on:
       - 'openssl-options.txt'
 
 env:
-  OpenSSL_VERSION: "3.4.1"
+  OpenSSL_VERSION: "3.5.0"
 
 jobs:
   delete_assets:
