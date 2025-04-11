@@ -5,6 +5,8 @@ on:
     branches: [main]
     paths:
       - '.github/workflows/build-icu4c.yml'
+      - 'mingw-gcc.txt'
+      - 'cl_version'
 
 env:
   ICU4C_VERSION: "76_1"

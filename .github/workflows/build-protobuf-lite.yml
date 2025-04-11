@@ -6,6 +6,8 @@ on:
     paths:
       - '.github/workflows/build-protobuf-lite.yml'
       - 'protobuf-options.txt'
+      - 'mingw-gcc.txt'
+      - 'cl_version'
 
 env:
   PROTOBUF_VERSION: "21.12"

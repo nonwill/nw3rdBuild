@@ -6,6 +6,8 @@ on:
     paths:
       - '.github/workflows/build-oneDNN.yml'
       - 'oneDNN-options.txt'
+      - 'mingw-gcc.txt'
+      - 'cl_version'
 
 env:
   ONEDNN_VERSION: "3.7.2"

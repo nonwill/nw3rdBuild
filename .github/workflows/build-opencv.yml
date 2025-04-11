@@ -6,6 +6,8 @@ on:
     paths:
       - '.github/workflows/build-opencv.yml'
       - 'opencv-options.txt'
+      - 'mingw-gcc.txt'
+      - 'cl_version'
 
 env:
   OPENCV_VERSION: "3.4.20"

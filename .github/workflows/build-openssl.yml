@@ -6,6 +6,8 @@ on:
     paths:
       - '.github/workflows/build-openssl.yml'
       - 'openssl-options.txt'
+      - 'mingw-gcc.txt'
+      - 'cl_version'
 
 env:
   OpenSSL_VERSION: "3.5.0"
