@@ -43,6 +43,16 @@ jobs:
                         echo winSdkDir=%WindowsSdkDir%
                         echo vcToolsInstallDir=%VCToolsInstallDir%
                         cl.exe
+                        echo Copy Llvm Tools
+                        mkdir Llvm && cd Llvm && mkdir bin
+                        copy /Y "%vcToolsInstallDir%../../Llvm/bin/clang-format.exe" bin
+                        copy /Y "%vcToolsInstallDir%../../Llvm/bin/git-clang-format" bin
+                        copy /Y "%vcToolsInstallDir%../../Llvm/bin/clang-tidy.exe" bin
+                        mkdir x64 && cd x64 && mkdir bin
+                        copy /Y "%vcToolsInstallDir%../../Llvm/x64/bin/clang-format.exe" bin
+                        copy /Y "%vcToolsInstallDir%../../Llvm/x64/bin/git-clang-format" bin
+                        copy /Y "%vcToolsInstallDir%../../Llvm/x64/bin/clang-tidy.exe" bin
+                        cd .. && cd ..
                         mkdir vcToolsInstallDir Auxiliary
                         echo Copy VC Auxiliary Build
                         cd Auxiliary && mkdir Build
@@ -76,6 +86,13 @@ jobs:
                         cd ..
                         del /S /Q *.pdb
                         cd ..
+
+                - name: zip Llvm
+                  uses: thedoctor0/zip-release@0.7.1
+                  with:
+                        type: 'zip'
+                        path: Llvm
+                        filename: 'Llvm.zip'
 
                 - name: zip VC_Auxiliary
                   uses: thedoctor0/zip-release@0.7.1
@@ -152,6 +169,7 @@ jobs:
                         draft: false
                         prerelease: false
                         files: |
+                                Llvm.zip
                                 vc_Auxiliary.zip
                                 Auxiliary.zip
                                 include.zip
