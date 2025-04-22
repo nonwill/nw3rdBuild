@@ -9,8 +9,8 @@ on:
       - 'cl_version'
 
 env:
-  ICU4C_VERSION: "76_1"
-  ICU4C_VERREL: "76-1"
+  ICU4C_VERSION: "77_1"
+  ICU4C_VERREL: "77-1"
 
 jobs:
   windows-msvc-2019:
