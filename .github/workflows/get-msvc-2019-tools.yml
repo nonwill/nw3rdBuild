@@ -71,76 +71,16 @@ jobs:
                         cd ..
                         del /S /Q *.pdb
                         cd ..
-
-                - name: zip Llvm
-                  uses: thedoctor0/zip-release@0.7.6
-                  with:
-                        type: 'zip'
-                        path: Llvm
-                        filename: 'Llvm.zip'
-
-                - name: zip VC_Auxiliary
-                  uses: thedoctor0/zip-release@0.7.6
-                  with:
-                        type: 'zip'
-                        path: Auxiliary
-                        filename: 'vc_Auxiliary.zip'
-
-                - name: zip atlmfc
-                  uses: thedoctor0/zip-release@0.7.6
-                  with:
-                        type: 'zip'
-                        path: vcToolsInstallDir/atlmfc
-                        filename: 'atlmfc.zip'
-
-                - name: zip Auxiliary
-                  uses: thedoctor0/zip-release@0.7.6
-                  with:
-                        type: 'zip'
-                        path: vcToolsInstallDir/Auxiliary
-                        filename: 'Auxiliary.zip'
-
-                - name: zip crt
-                  uses: thedoctor0/zip-release@0.7.6
-                  with:
-                        type: 'zip'
-                        path: vcToolsInstallDir/crt
-                        filename: 'crt.zip'
-
-                - name: zip include
-                  uses: thedoctor0/zip-release@0.7.6
-                  with:
-                        type: 'zip'
-                        path: vcToolsInstallDir/include
-                        filename: 'include.zip'
-
-                - name: zip lib/x64
-                  uses: thedoctor0/zip-release@0.7.6
-                  with:
-                        type: 'zip'
-                        path: vcToolsInstallDir/lib/x64
-                        filename: 'lib_x64.zip'
-
-                - name: zip lib/x86
-                  uses: thedoctor0/zip-release@0.7.6
-                  with:
-                        type: 'zip'
-                        path: vcToolsInstallDir/lib/x86
-                        filename: 'lib_x86.zip'
-
-                - name: zip bin/Hostx64
-                  uses: thedoctor0/zip-release@0.7.6
-                  with:
-                        type: 'zip'
-                        path: vcToolsInstallDir/bin/Hostx64
-                        filename: 'bin_Hostx64.zip'
-
-                - name: zip bin/Hostx86
-                  uses: thedoctor0/zip-release@0.7.6
-                  with:
-                        type: 'zip'
-                        path: vcToolsInstallDir/bin/Hostx86
-                        filename: 'bin_Hostx86.zip'
+                        7z -mx5 a ./Llvm.7z ./Llvm
+                        7z -mx5 a ./vc_Auxiliary.7z ./Auxiliary
+                        7z -mx5 a ./atlmfc.7z ./vcToolsInstallDir/atlmfc
+                        7z -mx5 a ./Auxiliary.7z ./vcToolsInstallDir/Auxiliary
+                        7z -mx5 a ./crt.7z ./vcToolsInstallDir/crt
+                        7z -mx5 a ./include.7z ./vcToolsInstallDir/include
+                        7z -mx5 a ./lib_x64.7z ./vcToolsInstallDir/lib/x64
+                        7z -mx5 a ./lib_x86.7z ./vcToolsInstallDir/lib/x86
+                        7z -mx5 a ./bin_Hostx64.7z ./vcToolsInstallDir/bin/Hostx64
+                        7z -mx5 a ./bin_Hostx86.7z ./vcToolsInstallDir/bin/Hostx86
 
                 - name: Delete msvc2019_latest assets
                   uses: andreaswilli/delete-release-assets-action@v4.0.0
@@ -161,13 +101,4 @@ jobs:
                         draft: false
                         prerelease: false
                         files: |
-                                Llvm.zip
-                                vc_Auxiliary.zip
-                                Auxiliary.zip
-                                include.zip
-                                crt.zip
-                                atlmfc.zip
-                                lib_x64.zip
-                                lib_x86.zip
-                                bin_Hostx64.zip
-                                bin_Hostx86.zip
+                                ./*.7z
