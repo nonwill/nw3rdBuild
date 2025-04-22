@@ -29,15 +29,15 @@ jobs:
                         echo vcToolsInstallDir=%VCToolsInstallDir%
                         cl.exe
                         echo Copy Llvm Tools
-                        mkdir Llvm && cd Llvm && mkdir bin
-                        copy /Y "%vcToolsInstallDir%../../Llvm/bin/clang-format.exe" bin
-                        copy /Y "%vcToolsInstallDir%../../Llvm/bin/git-clang-format" bin
-                        copy /Y "%vcToolsInstallDir%../../Llvm/bin/clang-tidy.exe" bin
-                        mkdir x64 && cd x64 && mkdir bin
-                        copy /Y "%vcToolsInstallDir%../../Llvm/x64/bin/clang-format.exe" bin
-                        copy /Y "%vcToolsInstallDir%../../Llvm/x64/bin/git-clang-format" bin
-                        copy /Y "%vcToolsInstallDir%../../Llvm/x64/bin/clang-tidy.exe" bin
-                        cd .. && cd ..
+                        mkdir Llvm && cd Llvm && mkdir bin && cd bin
+                        copy /Y "%vcToolsInstallDir%..\..\Llvm\bin\clang-format.exe" .
+                        copy /Y "%vcToolsInstallDir%..\..\Llvm\bin\git-clang-format" .
+                        copy /Y "%vcToolsInstallDir%..\..\Llvm\bin\clang-tidy.exe" .
+                        cd .. && mkdir x64 && cd x64 && mkdir bin && cd bin
+                        copy /Y "%vcToolsInstallDir%..\..\Llvm\x64\bin\clang-format.exe" .
+                        copy /Y "%vcToolsInstallDir%..\..\Llvm\x64\bin\git-clang-format" .
+                        copy /Y "%vcToolsInstallDir%..\..\Llvm\x64\bin\clang-tidy.exe" .
+                        cd .. && cd .. && cd ..
                         mkdir vcToolsInstallDir Auxiliary
                         echo Copy VC Auxiliary Build
                         cd Auxiliary && mkdir Build
