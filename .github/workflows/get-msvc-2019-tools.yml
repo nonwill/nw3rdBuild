@@ -73,14 +73,7 @@ jobs:
                         cd ..
                         7z -mx5 a ./Llvm.7z ./Llvm
                         7z -mx5 a ./vc_Auxiliary.7z ./Auxiliary
-                        7z -mx5 a ./atlmfc.7z ./vcToolsInstallDir/atlmfc
-                        7z -mx5 a ./Auxiliary.7z ./vcToolsInstallDir/Auxiliary
-                        7z -mx5 a ./crt.7z ./vcToolsInstallDir/crt
-                        7z -mx5 a ./include.7z ./vcToolsInstallDir/include
-                        7z -mx5 a ./lib_x64.7z ./vcToolsInstallDir/lib/x64
-                        7z -mx5 a ./lib_x86.7z ./vcToolsInstallDir/lib/x86
-                        7z -mx5 a ./bin_Hostx64.7z ./vcToolsInstallDir/bin/Hostx64
-                        7z -mx5 a ./bin_Hostx86.7z ./vcToolsInstallDir/bin/Hostx86
+                        7z -mx5 a ./vcToolsInstallDir.7z ./vcToolsInstallDir
 
                 - name: Delete msvc2019_latest assets
                   uses: andreaswilli/delete-release-assets-action@v4.0.0
