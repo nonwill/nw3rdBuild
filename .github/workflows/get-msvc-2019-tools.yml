@@ -142,8 +142,6 @@ jobs:
                         path: vcToolsInstallDir/bin/Hostx86
                         filename: 'bin_Hostx86.zip'
 
-                - name: Check out Git repository
-                  uses: actions/checkout@v4
                 - name: Delete msvc2019_latest assets
                   uses: andreaswilli/delete-release-assets-action@v4.0.0
                   with:
