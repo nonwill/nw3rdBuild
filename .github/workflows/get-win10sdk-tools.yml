@@ -74,41 +74,7 @@ jobs:
                         xcopy "%WindowsSdkDir%Lib/%winSdkVer%/ucrt_enclave/x64" x64 /Y /E /I /Q /H /C
                         cd .. && cd .. && cd ..
                         cd ..
-
-                - name: zip bin
-                  uses: thedoctor0/zip-release@0.7.6
-                  with:
-                        type: 'zip'
-                        path: WindowsSdkDir/bin
-                        filename: 'bin.zip'
-
-                - name: zip Debuggers
-                  uses: thedoctor0/zip-release@0.7.6
-                  with:
-                        type: 'zip'
-                        path: WindowsSdkDir/Debuggers
-                        filename: 'Debuggers.zip'
-
-                - name: zip Include
-                  uses: thedoctor0/zip-release@0.7.6
-                  with:
-                        type: 'zip'
-                        path: WindowsSdkDir/Include
-                        filename: 'Include.zip'
-
-                - name: zip Lib
-                  uses: thedoctor0/zip-release@0.7.6
-                  with:
-                        type: 'zip'
-                        path: WindowsSdkDir/Lib
-                        filename: 'Lib.zip'
-
-                - name: zip Source
-                  uses: thedoctor0/zip-release@0.7.6
-                  with:
-                        type: 'zip'
-                        path: WindowsSdkDir/Source
-                        filename: 'Source.zip'
+                        7z -mx5 a ./WindowsSdkDir.7z ./WindowsSdkDir
 
                 - name: Check out Git repository
                   uses: actions/checkout@v4
@@ -131,8 +97,4 @@ jobs:
                         draft: false
                         prerelease: false
                         files: |
-                                bin.zip
-                                Debuggers.zip
-                                Include.zip
-                                Lib.zip
-                                Source.zip
+                                ./*.7z
