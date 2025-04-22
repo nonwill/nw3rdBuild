@@ -13,22 +13,10 @@ env:
   ONEDNN_VERSION: "3.7.2"
 
 jobs:
-  delete_assets:
-    name: Delete Assets
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v3
-    - uses: andreaswilli/delete-release-assets-action@v4.0.0
-      with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        tag: oneDNN-${{ env.ONEDNN_VERSION }}
-        deleteOnlyFromDrafts: false
-
   build_with_windows-2019:
-    needs: delete_assets
     runs-on: windows-2019
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - name: Install or Download Dependencies
       run: |
@@ -110,6 +98,12 @@ jobs:
         cd ..
         echo ~~~~~~~~~~~~ msvc2019 build end ~~~~~~~~~~~~
         rm -rf $WSP_ROOT/oneDNN-${{ env.ONEDNN_VERSION }}-msvc2019-x64
+
+    - uses: andreaswilli/delete-release-assets-action@v4.0.0
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        tag: oneDNN-${{ env.ONEDNN_VERSION }}
+        deleteOnlyFromDrafts: false
 
     - name: Upload oneDNN-${{ env.ONEDNN_VERSION }}
       uses: softprops/action-gh-release@v2

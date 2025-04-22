@@ -5,22 +5,7 @@ on:
         types: [created]
 
 jobs:
-    delete_msvc2019_latest:
-        name: Delete tag msvc2019_latest
-        if: ${{ !github.event.issue.pull_request && contains(github.event.issue.labels.*.name, 'get_msvc2019') && github.event.issue.user.login == 'nonwill' && github.triggering_actor == 'nonwill' && github.event.comment.user.login == 'nonwill' }}
-        runs-on: ubuntu-latest
-        steps:
-                - name: Check out Git repository
-                  uses: actions/checkout@v1
-                - name: Delete msvc2019_latest assets
-                  uses: andreaswilli/delete-release-assets-action@v3.0.0
-                  with:
-                        github_token: ${{ secrets.GITHUB_TOKEN }}
-                        tag: msvc2019_latest
-                        deleteOnlyFromDrafts: false
-
     get_latest_msvc2019:
-        needs: delete_msvc2019_latest
         name: Get latest msvc 2019 build tools
         if: ${{ !github.event.issue.pull_request && contains(github.event.issue.labels.*.name, 'get_msvc2019') && github.event.issue.user.login == 'nonwill' && github.triggering_actor == 'nonwill' && github.event.comment.user.login == 'nonwill' }}
         runs-on: windows-2019
@@ -88,77 +73,86 @@ jobs:
                         cd ..
 
                 - name: zip Llvm
-                  uses: thedoctor0/zip-release@0.7.1
+                  uses: thedoctor0/zip-release@0.7.6
                   with:
                         type: 'zip'
                         path: Llvm
                         filename: 'Llvm.zip'
 
                 - name: zip VC_Auxiliary
-                  uses: thedoctor0/zip-release@0.7.1
+                  uses: thedoctor0/zip-release@0.7.6
                   with:
                         type: 'zip'
                         path: Auxiliary
                         filename: 'vc_Auxiliary.zip'
 
                 - name: zip atlmfc
-                  uses: thedoctor0/zip-release@0.7.1
+                  uses: thedoctor0/zip-release@0.7.6
                   with:
                         type: 'zip'
                         path: vcToolsInstallDir/atlmfc
                         filename: 'atlmfc.zip'
 
                 - name: zip Auxiliary
-                  uses: thedoctor0/zip-release@0.7.1
+                  uses: thedoctor0/zip-release@0.7.6
                   with:
                         type: 'zip'
                         path: vcToolsInstallDir/Auxiliary
                         filename: 'Auxiliary.zip'
 
                 - name: zip crt
-                  uses: thedoctor0/zip-release@0.7.1
+                  uses: thedoctor0/zip-release@0.7.6
                   with:
                         type: 'zip'
                         path: vcToolsInstallDir/crt
                         filename: 'crt.zip'
 
                 - name: zip include
-                  uses: thedoctor0/zip-release@0.7.1
+                  uses: thedoctor0/zip-release@0.7.6
                   with:
                         type: 'zip'
                         path: vcToolsInstallDir/include
                         filename: 'include.zip'
 
                 - name: zip lib/x64
-                  uses: thedoctor0/zip-release@0.7.1
+                  uses: thedoctor0/zip-release@0.7.6
                   with:
                         type: 'zip'
                         path: vcToolsInstallDir/lib/x64
                         filename: 'lib_x64.zip'
 
                 - name: zip lib/x86
-                  uses: thedoctor0/zip-release@0.7.1
+                  uses: thedoctor0/zip-release@0.7.6
                   with:
                         type: 'zip'
                         path: vcToolsInstallDir/lib/x86
                         filename: 'lib_x86.zip'
 
                 - name: zip bin/Hostx64
-                  uses: thedoctor0/zip-release@0.7.1
+                  uses: thedoctor0/zip-release@0.7.6
                   with:
                         type: 'zip'
                         path: vcToolsInstallDir/bin/Hostx64
                         filename: 'bin_Hostx64.zip'
 
                 - name: zip bin/Hostx86
-                  uses: thedoctor0/zip-release@0.7.1
+                  uses: thedoctor0/zip-release@0.7.6
                   with:
                         type: 'zip'
                         path: vcToolsInstallDir/bin/Hostx86
                         filename: 'bin_Hostx86.zip'
 
+                - name: Check out Git repository
+                  uses: actions/checkout@v4
+                - name: Delete msvc2019_latest assets
+                  uses: andreaswilli/delete-release-assets-action@v4.0.0
+                  with:
+                        github_token: ${{ secrets.GITHUB_TOKEN }}
+                        tag: msvc2019_latest
+                        deleteOnlyFromDrafts: false
+
                 - name: Create Release and Upload Release Asset
-                  uses: softprops/action-gh-release@v1
+                  uses: softprops/action-gh-release@v2
                   with:
                         tag_name: msvc2019_latest
                         name: Latest msvc-2019 build tools for Windows x86/x64

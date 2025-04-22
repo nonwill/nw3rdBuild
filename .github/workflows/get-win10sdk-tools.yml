@@ -5,22 +5,7 @@ on:
         types: [created]
 
 jobs:
-    delete_win10sdk_latest:
-        name: Delete tag win10sdk_latest
-        if: ${{ !github.event.issue.pull_request && contains(github.event.issue.labels.*.name, 'get_win10sdk') && github.event.issue.user.login == 'nonwill' && github.triggering_actor == 'nonwill' && github.event.comment.user.login == 'nonwill' }}
-        runs-on: ubuntu-latest
-        steps:
-                - name: Check out Git repository
-                  uses: actions/checkout@v1
-                - name: Delete win10sdk_latest assets
-                  uses: andreaswilli/delete-release-assets-action@v3.0.0
-                  with:
-                        github_token: ${{ secrets.GITHUB_TOKEN }}
-                        tag: win10sdk_latest
-                        deleteOnlyFromDrafts: false
-
     get_latest_win10sdk:
-        needs: delete_win10sdk_latest
         name: Get latest win10sdk build tools
         if: ${{ !github.event.issue.pull_request && contains(github.event.issue.labels.*.name, 'get_win10sdk') && github.event.issue.user.login == 'nonwill' && github.triggering_actor == 'nonwill' && github.event.comment.user.login == 'nonwill' }}
         runs-on: windows-2019
@@ -91,42 +76,51 @@ jobs:
                         cd ..
 
                 - name: zip bin
-                  uses: thedoctor0/zip-release@0.7.1
+                  uses: thedoctor0/zip-release@0.7.6
                   with:
                         type: 'zip'
                         path: WindowsSdkDir/bin
                         filename: 'bin.zip'
 
                 - name: zip Debuggers
-                  uses: thedoctor0/zip-release@0.7.1
+                  uses: thedoctor0/zip-release@0.7.6
                   with:
                         type: 'zip'
                         path: WindowsSdkDir/Debuggers
                         filename: 'Debuggers.zip'
 
                 - name: zip Include
-                  uses: thedoctor0/zip-release@0.7.1
+                  uses: thedoctor0/zip-release@0.7.6
                   with:
                         type: 'zip'
                         path: WindowsSdkDir/Include
                         filename: 'Include.zip'
 
                 - name: zip Lib
-                  uses: thedoctor0/zip-release@0.7.1
+                  uses: thedoctor0/zip-release@0.7.6
                   with:
                         type: 'zip'
                         path: WindowsSdkDir/Lib
                         filename: 'Lib.zip'
 
                 - name: zip Source
-                  uses: thedoctor0/zip-release@0.7.1
+                  uses: thedoctor0/zip-release@0.7.6
                   with:
                         type: 'zip'
                         path: WindowsSdkDir/Source
                         filename: 'Source.zip'
 
+                - name: Check out Git repository
+                  uses: actions/checkout@v4
+                - name: Delete win10sdk_latest assets
+                  uses: andreaswilli/delete-release-assets-action@v4.0.0
+                  with:
+                        github_token: ${{ secrets.GITHUB_TOKEN }}
+                        tag: win10sdk_latest
+                        deleteOnlyFromDrafts: false
+
                 - name: Create Release and Upload Release Asset
-                  uses: softprops/action-gh-release@v1
+                  uses: softprops/action-gh-release@v2
                   with:
                         tag_name: win10sdk_latest
                         name: Latest Win10 SDK build tools for Windows x86/x64

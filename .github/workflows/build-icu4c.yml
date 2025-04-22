@@ -13,21 +13,7 @@ env:
   ICU4C_VERREL: "76-1"
 
 jobs:
-  delete_assets:
-    name: Delete Assets
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v3
-    - uses: andreaswilli/delete-release-assets-action@v4.0.0
-      with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        tag: icu4c-${{ env.ICU4C_VERSION }}
-        deleteOnlyFromDrafts: false
-
-
-  # Windows MSVC distribution release
   windows-msvc-2019:
-    needs: delete_assets
     runs-on: windows-2019
     strategy:
       fail-fast: false
@@ -175,6 +161,12 @@ jobs:
         echo "cl_exe_info=$(cl > cl_version 2>&1 && head -n 1 cl_version)" >> $GITHUB_OUTPUT
         echo "gcc_exe_info=$(gcc --version > gcc_version 2>&1 && head -n 1 gcc_version)" >> $GITHUB_OUTPUT
         rm -rf $USER_MINGW_DIR
+
+    - uses: andreaswilli/delete-release-assets-action@v4.0.0
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        tag: icu4c-${{ env.ICU4C_VERSION }}
+        deleteOnlyFromDrafts: false
 
     - name: Upload icu4c-${{ env.ICU4C_VERSION }}
       uses: softprops/action-gh-release@v2

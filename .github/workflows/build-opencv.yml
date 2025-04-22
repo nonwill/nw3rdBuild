@@ -13,19 +13,7 @@ env:
   OPENCV_VERSION: "3.4.20"
 
 jobs:
-  delete_assets:
-    name: Delete Assets
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v3
-    - uses: andreaswilli/delete-release-assets-action@v4.0.0
-      with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        tag: opencv-${{ env.OPENCV_VERSION }}
-        deleteOnlyFromDrafts: false
-
   build_with_windows-2019:
-    needs: delete_assets
     runs-on: windows-2019
     steps:
     - uses: actions/checkout@v4
@@ -162,6 +150,12 @@ jobs:
         cd ..
         echo ~~~~~~~~~~~~ msvc2019 build end ~~~~~~~~~~~~
         rm -rf $WSP_ROOT/opencv-${{ env.OPENCV_VERSION }}-msvc2019-x86
+
+    - uses: andreaswilli/delete-release-assets-action@v4.0.0
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        tag: opencv-${{ env.OPENCV_VERSION }}
+        deleteOnlyFromDrafts: false
 
     - name: Upload opencv-${{ env.OPENCV_VERSION }}
       uses: softprops/action-gh-release@v2

@@ -13,22 +13,10 @@ env:
   PROTOBUF_VERSION: "21.12"
 
 jobs:
-  delete_assets:
-    name: Delete Assets
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v3
-    - uses: andreaswilli/delete-release-assets-action@v4.0.0
-      with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        tag: protobuf-3.${{ env.PROTOBUF_VERSION }}
-        deleteOnlyFromDrafts: false
-
   build_with_windows-2019:
-    needs: delete_assets
     runs-on: windows-2019
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - name: Install or Download Dependencies
       run: |
@@ -158,6 +146,12 @@ jobs:
         cd ..
         echo ~~~~~~~~~~~~ msvc2019 build end ~~~~~~~~~~~~
         rm -rf $WSP_ROOT/protobuf-${{ env.PROTOBUF_VERSION }}-msvc2019-x86
+
+    - uses: andreaswilli/delete-release-assets-action@v4.0.0
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        tag: protobuf-3.${{ env.PROTOBUF_VERSION }}
+        deleteOnlyFromDrafts: false
 
     - name: Upload Protocol Buffers ${{ env.PROTOBUF_VERSION }}
       uses: softprops/action-gh-release@v2
