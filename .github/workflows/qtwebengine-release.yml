@@ -8,6 +8,7 @@ on:
 
 env:
   WB_VERSION: "5.15.18"
+  SYN_VERSION: "5.15.17"
 
 jobs:
   Get_qtwebengine_release:
@@ -28,22 +29,22 @@ jobs:
         wget https://github.com/qt/qtwebengine-chromium/archive/$CHROMIUMHASH.tar.gz -O qtwebengine-chromium-$CHROMIUMHASH.tar.gz || exit $?
         tar xzf qtwebengine-chromium-$CHROMIUMHASH.tar.gz || exit $?
         mv qtwebengine-${{ env.WB_VERSION }} qtwebengine-everywhere-src-${{ env.WB_VERSION }} || exit $?
-        (cd qtwebengine-everywhere-src-${{ env.WB_VERSION }} ; ../syncqt.pl -version ${{ env.WB_VERSION }} ) || exit $?
+        (cd qtwebengine-everywhere-src-${{ env.WB_VERSION }} ; ../syncqt.pl -version ${{ env.SYN_VERSION }} ) || exit $?
         rmdir qtwebengine-everywhere-src-${{ env.WB_VERSION }}/src/3rdparty || exit $?
         mv qtwebengine-chromium-$CHROMIUMHASH qtwebengine-everywhere-src-${{ env.WB_VERSION }}/src/3rdparty || exit $?
-        XZ_OPT="-9 -T2" tar cJf qtwebengine-everywhere-src-${{ env.WB_VERSION }}.tar.xz qtwebengine-everywhere-src-${{ env.WB_VERSION }} || exit $?
+        XZ_OPT="-9 -T2" tar cJf qtwebengine-everywhere-src-${{ env.WB_VERSION }}-syn-${{ env.SYN_VERSION }}.tar.xz qtwebengine-everywhere-src-${{ env.WB_VERSION }} || exit $?
         rm -rf qtwebengine-${{ env.WB_VERSION }} qtwebengine-${{ env.WB_VERSION }}.tar.gz qtwebengine-chromium-$CHROMIUMHASH qtwebengine-chromium-$CHROMIUMHASH.tar.gz qtwebengine-everywhere-src-${{ env.WB_VERSION }}
 
     - uses: andreaswilli/delete-release-assets-action@v4.0.0
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
-        tag: qtwebengine-${{ env.WB_VERSION }}
+        tag: qtwebengine-${{ env.WB_VERSION }}-syn-${{ env.SYN_VERSION }}
         deleteOnlyFromDrafts: false
 
     - name: Upload qtwebengine-${{ env.WB_VERSION }}
       uses: softprops/action-gh-release@v2
       with:
-        tag_name: qtwebengine-${{ env.WB_VERSION }}
+        tag_name: qtwebengine-${{ env.WB_VERSION }}-syn-${{ env.SYN_VERSION }}
         name:  qtwebengine-everywhere-src-${{ env.WB_VERSION }}
         body: |
           date: ${{ steps.vars.outputs.update_date }}
@@ -51,4 +52,4 @@ jobs:
         prerelease: false
         make_latest: true
         files: |
-          ./qtwebengine-everywhere-src-${{ env.WB_VERSION }}.tar.xz
+          ./qtwebengine-everywhere-src-${{ env.WB_VERSION }}-syn-${{ env.SYN_VERSION }}.tar.xz
