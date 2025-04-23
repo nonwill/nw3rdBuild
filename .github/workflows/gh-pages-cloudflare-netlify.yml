@@ -1,0 +1,87 @@
+name: Building Pages of Cloudflare | Netlify | Vercel
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/gh-pages-cloudflare-netlify.yml'
+
+jobs:
+  Pages_Cloudflare_and_Netlify_and_Vercel:
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+        with:
+          repository: nonwill/autoptr.top
+          ssh-key: ${{ secrets.ACTIONS_PULL_KEY_AUTOPTR }}
+          persist-credentials: false
+          ref: hugo
+    
+      - name: Setup Hugo
+        uses: peaceiris/actions-hugo@v2
+        with:
+          hugo-version: '0.123.8'
+          extended: true
+
+      - name: Build Cloudflare
+        run: |
+          hugo --minify --buildFuture --baseURL="https://www.autoptr.top/" 
+          rm -f ./public/CNAME ./public/.htaccess ./public/netlify.toml
+          cd ./public/service 
+          find -name index.htm | xargs rm -f 
+          cd ..
+          cd ..
+
+      - name: Deploy Cloudflare
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          full_commit_message: ++ #${{ github.event.head_commit.message }}
+          deploy_key: ${{ secrets.ACTIONS_DEPLOY_KEY_CDNPAGES }}
+          external_repository: nonwill/CDNPages
+          force_orphan: true
+          publish_branch: cloudflare
+
+      - name: Build Vercel
+        run: |
+          rm -rf ./public /tmp/ssh-auth.sock
+          hugo --minify --buildFuture --baseURL="https://autoptr.top/" 
+          rm -f ./public/CNAME ./public/.htaccess ./public/netlify.toml
+          cd ./public/service 
+          find -name index.htm | xargs rm -f 
+          cd ..
+          cd ..
+
+      - name: Deploy Vercel
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          full_commit_message: ++ #${{ github.event.head_commit.message }}
+          deploy_key: ${{ secrets.ACTIONS_DEPLOY_KEY_CDNPAGES }}
+          external_repository: nonwill/CDNPages
+          force_orphan: true
+          publish_branch: vercel
+
+      - name: Build Netlify
+        run: |
+          rm -rf ./public /tmp/ssh-auth.sock
+          hugo --minify --buildFuture --baseURL="https://netlify.autoptr.top/" 
+          rm ./public/CNAME ./public/.htaccess
+          cd ./public/service 
+          find -name index.htm | xargs rm -f 
+          cd ..
+          cd ..
+
+      - name: Deploy Netlify
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          full_commit_message: ++ #${{ github.event.head_commit.message }}
+          deploy_key: ${{ secrets.ACTIONS_DEPLOY_KEY_CDNPAGES }}
+          external_repository: nonwill/CDNPages
+          force_orphan: true
+          publish_branch: netlify
+
+      - name: Deploy to Cloudflare and Netlify Pages
+        run: |
+          chmod a+x ./post_notify.sh
+          ./post_notify.sh
