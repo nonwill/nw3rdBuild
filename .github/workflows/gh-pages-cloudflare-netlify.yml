@@ -83,5 +83,4 @@ jobs:
 
       - name: Deploy to Cloudflare and Netlify Pages
         run: |
-          chmod a+x ./post_notify.sh
-          ./post_notify.sh
+          chmod a+x ./post_notify.sh && ./post_notify.sh
