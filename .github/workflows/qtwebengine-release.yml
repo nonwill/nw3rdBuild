@@ -14,10 +14,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
-    - name: Build Cloudflare
+    - name: Get and Package
       id: vars
       run: |
         echo "update_date=$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
+        chmod a+x syncqt.pl
+        chmod a+x fixqt4headers.pl
         set -x
         CHROMIUMHASH=`wget https://code.qt.io/cgit/qt/qtwebengine.git/tree/src/3rdparty?h=${{ env.WB_VERSION }} -q --content-on-error -O - | grep "Bad object name: " | sed 's/^.*Bad object name: \([0-9a-f]\{40\}\).*$/\1/g'`
         rm -rf qtwebengine-${{ env.WB_VERSION }} qtwebengine-${{ env.WB_VERSION }}.tar.gz qtwebengine-chromium-$CHROMIUMHASH qtwebengine-chromium-$CHROMIUMHASH.tar.gz qtwebengine-everywhere-src-${{ env.WB_VERSION }}
@@ -26,7 +28,7 @@ jobs:
         wget https://github.com/qt/qtwebengine-chromium/archive/$CHROMIUMHASH.tar.gz -O qtwebengine-chromium-$CHROMIUMHASH.tar.gz || exit $?
         tar xzf qtwebengine-chromium-$CHROMIUMHASH.tar.gz || exit $?
         mv qtwebengine-${{ env.WB_VERSION }} qtwebengine-everywhere-src-${{ env.WB_VERSION }} || exit $?
-        (cd qtwebengine-everywhere-src-${{ env.WB_VERSION }} ; syncqt.pl -version ${{ env.WB_VERSION }} ) || exit $?
+        (cd qtwebengine-everywhere-src-${{ env.WB_VERSION }} ; ../syncqt.pl -version ${{ env.WB_VERSION }} ) || exit $?
         rmdir qtwebengine-everywhere-src-${{ env.WB_VERSION }}/src/3rdparty || exit $?
         mv qtwebengine-chromium-$CHROMIUMHASH qtwebengine-everywhere-src-${{ env.WB_VERSION }}/src/3rdparty || exit $?
         XZ_OPT="-9 -T2" tar cJf qtwebengine-everywhere-src-${{ env.WB_VERSION }}.tar.xz qtwebengine-everywhere-src-${{ env.WB_VERSION }} || exit $?
