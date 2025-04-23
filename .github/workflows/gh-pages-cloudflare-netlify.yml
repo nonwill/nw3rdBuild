@@ -1,14 +1,12 @@
 name: Building Pages of Cloudflare | Netlify | Vercel
 
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - '.github/workflows/gh-pages-cloudflare-netlify.yml'
+  issue_comment: 
+    types: [created]
 
 jobs:
   Pages_Cloudflare_and_Netlify_and_Vercel:
+    if: ${{ !github.event.issue.pull_request && contains(github.event.issue.labels.*.name, 'webcdn_updated') && github.event.issue.user.login == 'nonwill' && github.triggering_actor == 'nonwill' && github.event.comment.user.login == 'nonwill' }}
     runs-on: ubuntu-latest
     steps:
       - name: checkout
