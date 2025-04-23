@@ -45,6 +45,7 @@ jobs:
 
       - name: Build Vercel
         run: |
+          # /tmp/ssh-auth.sock must be removed before peaceiris/actions-gh-pages->deploy_key again
           rm -rf ./public /tmp/ssh-auth.sock
           hugo --minify --buildFuture --baseURL="https://autoptr.top/" 
           rm -f ./public/CNAME ./public/.htaccess ./public/netlify.toml
@@ -64,6 +65,7 @@ jobs:
 
       - name: Build Netlify
         run: |
+          # /tmp/ssh-auth.sock must be removed before peaceiris/actions-gh-pages->deploy_key again
           rm -rf ./public /tmp/ssh-auth.sock
           hugo --minify --buildFuture --baseURL="https://netlify.autoptr.top/" 
           rm ./public/CNAME ./public/.htaccess
