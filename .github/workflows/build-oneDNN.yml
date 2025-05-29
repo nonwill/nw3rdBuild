@@ -10,7 +10,7 @@ on:
       - 'cl_version'
 
 env:
-  ONEDNN_VERSION: "3.7.3"
+  ONEDNN_VERSION: "3.8.1"
 
 jobs:
   build_with_windows-2019:
