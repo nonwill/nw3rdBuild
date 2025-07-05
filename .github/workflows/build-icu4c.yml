@@ -14,7 +14,7 @@ env:
 
 jobs:
   build_with_mingw-gcc14:
-    runs-on: windows-2019
+    runs-on: windows-2022
     defaults:
       run:
         shell: msys2 {0}
@@ -131,7 +131,7 @@ jobs:
   # Windows MSVC distribution release
   build_with_windows-msvc-2019:
     needs: build_with_mingw-gcc14
-    runs-on: windows-2019
+    runs-on: windows-2022
     strategy:
       fail-fast: false
       matrix:

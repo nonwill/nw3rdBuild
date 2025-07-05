@@ -14,7 +14,7 @@ env:
 
 jobs:
   build_with_msvc-2019:
-    runs-on: windows-2019
+    runs-on: windows-2022
     steps:
     - uses: actions/checkout@v4
 
@@ -86,7 +86,7 @@ jobs:
 
   build_with_mingw-gcc14:
     needs: build_with_msvc-2019
-    runs-on: windows-2019
+    runs-on: windows-2022
     defaults:
       run:
         shell: msys2 {0}

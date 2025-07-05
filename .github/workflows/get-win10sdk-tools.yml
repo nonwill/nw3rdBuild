@@ -8,7 +8,7 @@ jobs:
     get_latest_win10sdk:
         name: Get latest win10sdk build tools
         if: ${{ !github.event.issue.pull_request && contains(github.event.issue.labels.*.name, 'get_win10sdk') && github.event.issue.user.login == 'nonwill' && github.triggering_actor == 'nonwill' && github.event.comment.user.login == 'nonwill' }}
-        runs-on: windows-2019
+        runs-on: windows-2022
         steps:
                 - uses: actions/checkout@v4
                 - uses: ilammy/msvc-dev-cmd@v1
