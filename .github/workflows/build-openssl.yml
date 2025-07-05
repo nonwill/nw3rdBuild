@@ -10,7 +10,7 @@ on:
       - 'cl_version'
 
 env:
-  OpenSSL_VERSION: "3.5.0"
+  OpenSSL_VERSION: "3.5.1"
 
 jobs:
   build_with_msvc-2019:
