@@ -86,6 +86,8 @@ jobs:
 
     - name: Setup msvc2019 x64 Environment
       uses: ilammy/msvc-dev-cmd@v1
+      with: 
+        toolset: 14.29
 
     - name: Get date and Cl version
       id: vars
@@ -127,6 +129,7 @@ jobs:
       uses: ilammy/msvc-dev-cmd@v1
       with:
         arch: amd64_x86
+        toolset: 14.29
 
     - name: msvc2019 x86 Build OpenCV-${{ env.OPENCV_VERSION }}
       shell: bash
