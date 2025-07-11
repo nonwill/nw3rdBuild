@@ -12,6 +12,8 @@ jobs:
         steps:
                 - uses: actions/checkout@v4
                 - uses: ilammy/msvc-dev-cmd@v1
+                  with: 
+                        toolset: 14.29
                 - name: Get version information
                   id: vars
                   shell: bash
