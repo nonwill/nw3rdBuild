@@ -121,8 +121,8 @@ jobs:
         mkdir deps
         cd deps && mkdir mingw64 && cd ..
         curl -L https://github.com/openssl/openssl/archive/refs/tags/openssl-${{ env.OpenSSL_VERSION }}.tar.gz -o openssl-${{ env.OpenSSL_VERSION }}.tar.gz
-        curl -L https://github.com/nonwill/mingw-distro/releases/download/mingw64-gcc-crt_latest/mingw-w64+gcc-i686-all.7z -o mingw-w64_gcc-i686-all.7z
-        curl -L https://github.com/nonwill/mingw-distro/releases/download/mingw64-gcc-crt_latest/mingw-w64+gcc-x86_64-all.7z -o mingw-w64_gcc-x86_64-all.7z
+        curl -L https://github.com/nonwill/mingw-distro/releases/download/mingw64-gcc15-crt_latest/mingw-w64+gcc-i686-all.7z -o mingw-w64_gcc-i686-all.7z
+        curl -L https://github.com/nonwill/mingw-distro/releases/download/mingw64-gcc15-crt_latest/mingw-w64+gcc-x86_64-all.7z -o mingw-w64_gcc-x86_64-all.7z
         dir
 
     - name: MinGW Build OpenSSL-${{ env.OpenSSL_VERSION }}
