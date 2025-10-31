@@ -9,11 +9,11 @@ on:
       - 'cl_version'
 
 env:
-  ICU4C_VERSION: "77_1"
-  ICU4C_VERREL: "77-1"
+  ICU4C_VERSION: "78.1"
+  ICU4C_VERREL: "78-1"
 
 jobs:
-  build_with_mingw-gcc14:
+  build_with_mingw-gcc15:
     runs-on: windows-2022
     defaults:
       run:
@@ -44,10 +44,10 @@ jobs:
         perl --version
         mkdir deps
         cd deps && mkdir mingw64 && cd ..
-        curl -L https://github.com/unicode-org/icu/releases/download/release-${{ env.ICU4C_VERREL }}/icu4c-${{ env.ICU4C_VERSION }}-src.tgz -o icu4c-${{ env.ICU4C_VERSION }}.tgz
+        curl -L https://github.com/unicode-org/icu/releases/download/release-${{ env.ICU4C_VERSION }}/icu4c-${{ env.ICU4C_VERSION }}-sources.tgz -o icu4c-${{ env.ICU4C_VERSION }}.tgz
         curl -L https://github.com/nonwill/mingw-distro/releases/download/mingw64-gcc15-crt_latest/mingw-w64+gcc-i686-all.7z -o mingw-w64_gcc-i686-all.7z
         curl -L https://github.com/nonwill/mingw-distro/releases/download/mingw64-gcc15-crt_latest/mingw-w64+gcc-x86_64-all.7z -o mingw-w64_gcc-x86_64-all.7z
-        dir
+        ls -la
 
     - name: MinGW Build icu4c-${{ env.ICU4C_VERSION }}
       run: |
@@ -132,7 +132,7 @@ jobs:
 
   # Windows MSVC distribution release
   build_with_windows-msvc-2019:
-    needs: build_with_mingw-gcc14
+    needs: build_with_mingw-gcc15
     runs-on: windows-2022
     strategy:
       fail-fast: false
@@ -151,7 +151,7 @@ jobs:
       run: |
         mkdir deps
         cd deps && mkdir mingw64 && cd ..
-        curl -L https://github.com/unicode-org/icu/releases/download/release-${{ env.ICU4C_VERREL }}/icu4c-${{ env.ICU4C_VERSION }}-src.tgz -o icu4c-${{ env.ICU4C_VERSION }}.tgz
+        curl -L https://github.com/unicode-org/icu/releases/download/release-${{ env.ICU4C_VERSION }}/icu4c-${{ env.ICU4C_VERSION }}-sources.tgz -o icu4c-${{ env.ICU4C_VERSION }}.tgz
         dir
         tar -xf icu4c-${{ env.ICU4C_VERSION }}.tgz
         dir
