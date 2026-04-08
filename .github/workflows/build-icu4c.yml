@@ -9,8 +9,8 @@ on:
       - 'cl_version'
 
 env:
-  ICU4C_VERSION: "78.2"
-  ICU4C_VERREL: "78-2"
+  ICU4C_VERSION: "78.3"
+  ICU4C_VERREL: "78-3"
 
 jobs:
   build_with_mingw-gcc15:
