@@ -151,26 +151,6 @@ jobs:
         rm -rf openssl-openssl-${{ env.OpenSSL_VERSION }}
         rm -rf $WSP_ROOT/openssl-${{ env.OpenSSL_VERSION }}-mingw64
         rm -rf $USER_MINGW_DIR/*
-        echo ~~~~~~~~~~~~ mingw64 build prepare ~~~~~~~~~~~~
-        7z x mingw-w64_gcc-x86_64-all.7z -r -o$USER_MINGW_DIR
-        rm -f mingw-w64_gcc-x86_64-all.7z
-        gcc -v
-        echo ~~~~~~~~~~~~ mingw64 build begin ~~~~~~~~~~~~
-        tar -xf openssl-${{ env.OpenSSL_VERSION }}.tar.gz
-        cd openssl-1.1.1-${{ env.OpenSSL_VERSION }}
-        perl.exe Configure no-idea no-mdc2 no-rc5 shared mingw \
-            --prefix=$WSP_ROOT/openssl-${{ env.OpenSSL_VERSION }}-mingw64 \
-            --openssldir=$WSP_ROOT/openssl-${{ env.OpenSSL_VERSION }}-mingw64/ssl && \
-            make && make install
-        cd ..
-        strip $WSP_ROOT/openssl-${{ env.OpenSSL_VERSION }}-mingw64/bin/*.dll
-        strip $WSP_ROOT/openssl-${{ env.OpenSSL_VERSION }}-mingw64/bin/*.exe
-        cd $WSP_ROOT/openssl-${{ env.OpenSSL_VERSION }}-mingw64
-        7z -mx5 a ../openssl-${{ env.OpenSSL_VERSION }}-mingw64-x86_64.7z *
-        cd ..
-        echo ~~~~~~~~~~~~ mingw64 build end ~~~~~~~~~~~~
-        rm -rf openssl-openssl-${{ env.OpenSSL_VERSION }}
-        rm -rf $WSP_ROOT/openssl-${{ env.OpenSSL_VERSION }}-mingw64
 
     - name: Setup msvc2019 x64 Environment
       uses: ilammy/msvc-dev-cmd@v1
@@ -204,3 +184,4 @@ jobs:
         make_latest: true
         files: |
           ./openssl-${{ env.OpenSSL_VERSION }}-*.7z
+          ./openssl-${{ env.OpenSSL_VERSION }}.tar.gz
