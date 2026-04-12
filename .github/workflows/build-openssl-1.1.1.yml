@@ -158,7 +158,7 @@ jobs:
         echo ~~~~~~~~~~~~ mingw64 build begin ~~~~~~~~~~~~
         tar -xf openssl-${{ env.OpenSSL_VERSION }}.tar.gz
         cd openssl-1.1.1-${{ env.OpenSSL_VERSION }}
-        perl.exe Configure no-idea no-mdc2 no-rc5 shared mingw64 \
+        perl.exe Configure no-idea no-mdc2 no-rc5 shared mingw \
             --prefix=$WSP_ROOT/openssl-${{ env.OpenSSL_VERSION }}-mingw64 \
             --openssldir=$WSP_ROOT/openssl-${{ env.OpenSSL_VERSION }}-mingw64/ssl && \
             make && make install
