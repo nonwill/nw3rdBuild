@@ -10,7 +10,7 @@ on:
       - 'cl_version'
 
 env:
-  ONEDNN_VERSION: "3.10.2"
+  ONEDNN_VERSION: "3.11.3"
 
 jobs:
   build_with_windows-2019:
@@ -113,6 +113,7 @@ jobs:
         tag_name: oneDNN-${{ env.ONEDNN_VERSION }}
         name: Latest build of oneDNN-${{ env.ONEDNN_VERSION }}
         body: |
+          oneDNN-${{ env.ONEDNN_VERSION }}
           date: ${{ steps.vars.outputs.update_date }}
           cl: ${{ steps.vars.outputs.cl_exe_info }}
           gcc: ${{ steps.vars.outputs.gcc_exe_info }}
@@ -121,3 +122,4 @@ jobs:
         make_latest: true
         files: |
           ./oneDNN-${{ env.ONEDNN_VERSION }}-*.7z
+          ./oneDNN-${{ env.ONEDNN_VERSION }}.tar.gz
