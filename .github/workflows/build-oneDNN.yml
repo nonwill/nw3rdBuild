@@ -10,7 +10,7 @@ on:
       - 'cl_version'
 
 env:
-  ONEDNN_VERSION: "3.11.3"
+  ONEDNN_VERSION: "3.12.1"
 
 jobs:
   build_with_windows-2019:
@@ -38,7 +38,7 @@ jobs:
         export WSP_ROOT=$PWD
         export USER_MINGW_DIR=$WSP_ROOT/deps/mingw64
         tar -xf oneDNN-${{ env.ONEDNN_VERSION }}.tar.gz
-        rm -f oneDNN-${{ env.ONEDNN_VERSION }}.tar.gz
+        # rm -f oneDNN-${{ env.ONEDNN_VERSION }}.tar.gz
         mkdir build
         echo ~~~~~~~~~~~~ mingw64 build prepare ~~~~~~~~~~~~
         7z x mingw-w64_gcc-x86_64-all.7z -r -o$USER_MINGW_DIR
