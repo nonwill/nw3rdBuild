@@ -150,7 +150,6 @@ jobs:
         echo ~~~~~~~~~~~~ mingw32 build end ~~~~~~~~~~~~
         rm -rf openssl-openssl-${{ env.OpenSSL_VERSION }}
         rm -rf $WSP_ROOT/openssl-${{ env.OpenSSL_VERSION }}-mingw64
-        rm -rf $USER_MINGW_DIR/*
 
     - name: Setup msvc2019 x64 Environment
       uses: ilammy/msvc-dev-cmd@v1
