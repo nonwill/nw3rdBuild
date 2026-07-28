@@ -23,10 +23,11 @@ jobs:
         brew install llvm@15
         #brew link llvm@15
         curl -L https://github.com/opencv/opencv/archive/${{ env.OPENCV_VERSION }}.tar.gz -o opencv-${{ env.OPENCV_VERSION }}.tar.gz
-        ls -la
         brew install botantony/cmake3/cmake3
         export PATH="$(brew --prefix cmake3)/bin:${PATH}"
         cmake --version
+        ls -lhR /usr/local/opt/llvm@15
+        exit 1
 
     - name: Build OpenCV-${{ env.OPENCV_VERSION }}-x86_64
       shell: bash
@@ -45,7 +46,7 @@ jobs:
         export CFLAGS="$cflags -I/usr/local/opt/llvm@15/include"
         export CXXFLAGS="$cflags -I/usr/local/opt/llvm@15/include"
         export CMAKE_PREFIX_PATH="/usr/local/opt/llvm@15"
-        which ar clang clang++
+        which ar ranlib clang clang++
         cd build-x86_64
         cmake ../opencv-${{ env.OPENCV_VERSION }} \
             -G "Unix Makefiles" \
@@ -77,7 +78,7 @@ jobs:
         export CFLAGS="$cflags -I/usr/local/opt/llvm@15/include"
         export CXXFLAGS="$cflags -I/usr/local/opt/llvm@15/include"
         export CMAKE_PREFIX_PATH="/usr/local/opt/llvm@15"
-        which ar clang clang++
+        which ar ranlib clang clang++
         cd build-arm64
         cmake ../opencv-${{ env.OPENCV_VERSION }} \
             -G "Unix Makefiles" \
