@@ -57,7 +57,7 @@ jobs:
             make -j4 CC="$CC" CXX="$CXX" && make install
         rm -rf ./*
         cd ..
-        cd $WSP_ROOT/opencv-${{ env.OPENCV_VERSION }}-macosx-x86_64 && ls -la
+        cd $WSP_ROOT/opencv-${{ env.OPENCV_VERSION }}-macosx-x86_64 && ls -la && cd lib && ls -la && cd .. && cd bin && ls -la && cd ..
         7z -mx5 a ../opencv-${{ env.OPENCV_VERSION }}-macOS-10.10-x86_64.7z *
         cd ..
         echo ~~~~~~~~~~~~ x86_64 build end ~~~~~~~~~~~~
@@ -66,8 +66,6 @@ jobs:
       shell: bash
       run: |
         export WSP_ROOT=$PWD
-        tar -xf opencv-${{ env.OPENCV_VERSION }}.tar.gz
-        rm -f opencv-${{ env.OPENCV_VERSION }}.tar.gz
         mkdir build-arm64
         echo ~~~~~~~~~~~~ arm64 build begin ~~~~~~~~~~~~
         cflags="-arch arm64 -isysroot macosx -Wno-unused-local-typedef -Wno-unused-function -DNDEBUG -g -O3 -pipe -fPIC -fcxx-exceptions"
@@ -91,7 +89,7 @@ jobs:
             make -j4 CC="$CC" CXX="$CXX" && make install
         rm -rf ./*
         cd ..
-        cd $WSP_ROOT/opencv-${{ env.OPENCV_VERSION }}-macosx-arm64 && ls -la
+        cd $WSP_ROOT/opencv-${{ env.OPENCV_VERSION }}-macosx-arm64 && ls -la && cd lib && ls -la && cd .. && cd bin && ls -la && cd ..
         7z -mx5 a ../opencv-${{ env.OPENCV_VERSION }}-macOS-10.10-arm64.7z *
         cd ..
         echo ~~~~~~~~~~~~ arm64 build end ~~~~~~~~~~~~
@@ -109,7 +107,6 @@ jobs:
         cd $WSP_ROOT/opencv-${{ env.OPENCV_VERSION }}-macosx-Universal && ls -la
         7z -mx5 a ../opencv-${{ env.OPENCV_VERSION }}-macOS-10.10-Universal.7z *
         cd ..
-        echo ~~~~~~~~~~~~ universal build end ~~~~~~~~~~~~
         rm -rf $WSP_ROOT/opencv-${{ env.OPENCV_VERSION }}-macOS-*
 
     - name: Get date and Cl version
