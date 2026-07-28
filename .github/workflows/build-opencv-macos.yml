@@ -27,8 +27,7 @@ jobs:
         export PATH="$(brew --prefix cmake3)/bin:${PATH}"
         cmake --version
         ls -la
-        ls -lhR /usr/local/opt/llvm@15/*
-        exit 1
+        #ls -la /usr/local/opt/llvm@15/*
 
     - name: Build OpenCV-${{ env.OPENCV_VERSION }}-x86_64
       shell: bash
@@ -56,7 +55,7 @@ jobs:
             -DCMAKE_OSX_DEPLOYMENT_TARGET=10.10 \
            `cat ../opencv-options.txt` \
             -DBUILD_opencv_world=ON && \
-            make -j4 CC="$CC" CXX="$CXX" && make install
+            make -j8 CC="$CC" CXX="$CXX" && make install
         rm -rf ./*
         cd ..
         cd $WSP_ROOT/opencv-${{ env.OPENCV_VERSION }}-macosx-x86_64 && ls -la && cd lib && ls -la && cd .. && cd bin && ls -la && cd ..
@@ -81,14 +80,14 @@ jobs:
         export CMAKE_PREFIX_PATH="/usr/local/opt/llvm@15"
         which ar ranlib clang clang++
         cd build-arm64
-        cmake ../opencv-${{ env.OPENCV_VERSION }} \
+        arch -arm64 cmake ../opencv-${{ env.OPENCV_VERSION }} \
             -G "Unix Makefiles" \
             -DCMAKE_INSTALL_PREFIX=$WSP_ROOT/opencv-${{ env.OPENCV_VERSION }}-macosx-arm64 \
             -DCMAKE_OSX_ARCHITECTURES="arm64" -DCMAKE_OSX_SYSROOT=macosx \
             -DCMAKE_OSX_DEPLOYMENT_TARGET=10.10 \
            `cat ../opencv-options.txt` \
             -DBUILD_opencv_world=ON && \
-            make -j4 CC="$CC" CXX="$CXX" && make install
+            arch -arm64 make -j8 CC="$CC" CXX="$CXX" && arch -arm64 make install
         rm -rf ./*
         cd ..
         cd $WSP_ROOT/opencv-${{ env.OPENCV_VERSION }}-macosx-arm64 && ls -la && cd lib && ls -la && cd .. && cd bin && ls -la && cd ..
