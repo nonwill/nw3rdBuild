@@ -11,7 +11,7 @@ env:
   OPENCV_VERSION: "3.4.20"
 
 jobs:
-  build_macos-shared-arm64:
+  build_macos_arm64:
     runs-on: macos-latest
     steps:
     - uses: actions/checkout@v4
@@ -75,8 +75,8 @@ jobs:
         files: |
           ./opencv-${{ env.OPENCV_VERSION }}-*.7z
 
-  build_macos-shared-intel:
-    needs: build_macos-shared-arm64
+  build_macos_intel:
+    needs: build_macos_arm64
     runs-on: macos-15-intel
     steps:
     - uses: actions/checkout@v4
@@ -139,12 +139,12 @@ jobs:
         files: |
           ./opencv-${{ env.OPENCV_VERSION }}-*.7z
 
-  male_macos-shared-universal:
-    needs: build_macos-shared-intel
+  male_macos_universal:
+    needs: build_macos_intel
     runs-on: macos-15-intel
     steps:
     - uses: actions/checkout@v4
-   - name: Install or Download Dependencies
+    - name: Install or Download Dependencies
       run: |
         choco install curl unzip 7zip -y
         curl -L https://github.com/nonwill/nw3rdBuild/releases/download/opencv-${{ env.OPENCV_VERSION }}-macos/opencv-${{ env.OPENCV_VERSION }}-macOS-10.10-x86_64.7z -o opencv-${{ env.OPENCV_VERSION }}-macOS-10.10-x86_64.7z
