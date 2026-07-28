@@ -26,7 +26,8 @@ jobs:
         brew install botantony/cmake3/cmake3
         export PATH="$(brew --prefix cmake3)/bin:${PATH}"
         cmake --version
-        ls -lhR /usr/local/opt/llvm@15
+        ls -la
+        ls -lhR /usr/local/opt/llvm@15/*
         exit 1
 
     - name: Build OpenCV-${{ env.OPENCV_VERSION }}-x86_64
