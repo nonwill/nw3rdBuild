@@ -45,7 +45,7 @@ jobs:
             -DCMAKE_OSX_DEPLOYMENT_TARGET=10.10 \
            `cat ../opencv-options.txt` \
             -DBUILD_opencv_world=ON && \
-            make -j8 && make install
+            make -j4 && make install
         rm -rf ./*
         cd ..
         cd $WSP_ROOT/opencv-${{ env.OPENCV_VERSION }}-macosx-x86_64 && ls -la && cd lib && ls -la && cd ..
@@ -65,7 +65,6 @@ jobs:
           ./opencv-${{ env.OPENCV_VERSION }}-*.7z
 
   build_macos_arm64:
-    needs: build_macos_intel
     runs-on: macos-latest
     steps:
     - uses: actions/checkout@v4
@@ -99,7 +98,7 @@ jobs:
             -DCMAKE_OSX_DEPLOYMENT_TARGET=10.10 \
            `cat ../opencv-options.txt` \
             -DBUILD_opencv_world=ON && \
-            make -j8 && make install
+            make -j4 && make install
         rm -rf ./*
         cd ..
         cd $WSP_ROOT/opencv-${{ env.OPENCV_VERSION }}-macosx-arm64 && ls -la && cd lib && ls -la && cd ..
@@ -119,16 +118,15 @@ jobs:
           ./opencv-${{ env.OPENCV_VERSION }}-*.7z
 
   make_macos_universal:
-    needs: build_macos_arm64
+    needs: [build_macos_intel, build_macos_arm64]
     runs-on: macos-15-intel
     steps:
     - uses: actions/checkout@v4
     - name: Install or Download Dependencies
       run: |
         brew install curl 7zip
-        curl -L https://github.com/nonwill/nw3rdBuild/releases/download/opencv-${{ env.OPENCV_VERSION }}-macos/opencv-${{ env.OPENCV_VERSION }}-macOS-10.10-x86_64.7z -o opencv-${{ env.OPENCV_VERSION }}-macOS-10.10-x86_64.7z
-        curl -L https://github.com/nonwill/nw3rdBuild/releases/download/opencv-${{ env.OPENCV_VERSION }}-macos/opencv-${{ env.OPENCV_VERSION }}-macOS-10.10-arm64.7z -o opencv-${{ env.OPENCV_VERSION }}-macOS-10.10-arm64.7z
-        curl -L https://github.com/nonwill/nw3rdBuild/releases/download/opencv-${{ env.OPENCV_VERSION }}-macos/opencv-${{ env.OPENCV_VERSION }}-macOS-10.10-arm64.7z -o opencv-${{ env.OPENCV_VERSION }}-macOS-10.10-universal2.7z
+        curl -L https://github.com/nonwill/nw3rdBuild/releases/download/opencv-${{ env.OPENCV_VERSION }}/opencv-${{ env.OPENCV_VERSION }}-macOS-10.10-x86_64.7z -o opencv-${{ env.OPENCV_VERSION }}-macOS-10.10-x86_64.7z
+        curl -L https://github.com/nonwill/nw3rdBuild/releases/download/opencv-${{ env.OPENCV_VERSION }}/opencv-${{ env.OPENCV_VERSION }}-macOS-10.10-arm64.7z -o opencv-${{ env.OPENCV_VERSION }}-macOS-10.10-arm64.7z
         export WSP_ROOT=$PWD
         7z x opencv-${{ env.OPENCV_VERSION }}-macOS-10.10-x86_64.7z -r -o$WSP_ROOT/x86_64
         7z x opencv-${{ env.OPENCV_VERSION }}-macOS-10.10-arm64.7z -r -o$WSP_ROOT/arm64
