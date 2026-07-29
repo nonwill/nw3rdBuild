@@ -136,12 +136,13 @@ jobs:
       shell: bash
       run: |
         export WSP_ROOT=$PWD
+        ocv_ver=${{ env.OPENCV_VERSION }}
         mkdir -p $WSP_ROOT/opencv-${{ env.OPENCV_VERSION }}-macosx-universal/lib
         cp -R $WSP_ROOT/x86_64/include $WSP_ROOT/opencv-${{ env.OPENCV_VERSION }}-macosx-universal
         lipo \
                 $WSP_ROOT/x86_64/lib/libopencv_world.${{ env.OPENCV_VERSION }}.dylib \
                 $WSP_ROOT/arm64/lib/libopencv_world.${{ env.OPENCV_VERSION }}.dylib \
-                -create -output $WSP_ROOT/opencv-${{ env.OPENCV_VERSION }}-macosx-Universal/lib/libopencv_world.${{ env.OPENCV_VERSION }}.dylib
+                -create -output $WSP_ROOT/opencv-${{ env.OPENCV_VERSION }}-macosx-universal/lib/libopencv_world${ocv_ver//\.}.dylib
         cd $WSP_ROOT/opencv-${{ env.OPENCV_VERSION }}-macosx-universal && ls -la && cd lib && ls -la && cd ..
         7z -mx5 a ../opencv-${{ env.OPENCV_VERSION }}-macOS-10.10-universal.7z *
         cd ..
