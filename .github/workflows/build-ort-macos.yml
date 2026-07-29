@@ -103,8 +103,11 @@ jobs:
 
       - name: Collect results
         if: steps.cache-build-result.outputs.cache-hit != 'true'
+        id: vars
         shell: bash
         run: |
+          echo "update_date=$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
+
           build_dir=./build-macos/${{ matrix.arch }}
 
           ls -lh $build_dir
@@ -186,22 +189,23 @@ jobs:
 
           zip -r ${artifact}.zip ./$artifact
 
-      - uses: andreaswilli/delete-release-assets-action@v4.0.0
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          tag: onnxruntime-${{ env.ONNXRUNTIME_VERSION }}
-          deleteOnlyFromDrafts: false
+          pwd && ls -la
 
-      - name: Upload onnxruntime-${{ env.ONNXRUNTIME_VERSION }}
-        uses: softprops/action-gh-release@v2
+      - name: Upload artifact
+        if: steps.cache-build-result.outputs.cache-hit != 'true'
+        uses: actions/upload-artifact@v4
         with:
-          tag_name: onnxruntime-${{ env.ONNXRUNTIME_VERSION }}
-          name: Latest build of onnxruntime-${{ env.ONNXRUNTIME_VERSION }}
+          name: onnxruntime-osx-${{ matrix.arch }}-${{ env.ONNXRUNTIME_VERSION }}
+          path: onnxruntime-osx-${{ matrix.arch }}-${{ env.ONNXRUNTIME_VERSION }}
+
+      - name: Upload v${{ env.ONNXRUNTIME_VERSION }}
+        if: steps.cache-build-result.outputs.cache-hit != 'true'
+        uses: svenstaro/upload-release-action@v2
+        with:
+          file_glob: true
+          file: "./*.zip"
+          overwrite: true
+          tag: onnxruntime-${{ env.ONNXRUNTIME_VERSION }}
+          release_name: Latest build of onnxruntime-${{ env.ONNXRUNTIME_VERSION }}
           body: |
             date: ${{ steps.vars.outputs.update_date }}
-          draft: false
-          prerelease: false
-          make_latest: true
-          files: |
-            "./onnxruntime-osx-*.zip"
-
