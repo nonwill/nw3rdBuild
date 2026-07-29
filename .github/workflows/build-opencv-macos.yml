@@ -8,7 +8,7 @@ on:
       - 'opencv-options.txt'
 
 env:
-  OPENCV_VERSION: "3.4.20"
+  OPENCV_VERSION: "4.14.0"
 
 jobs:
   build_macos_arm64:
@@ -19,15 +19,10 @@ jobs:
     - name: Install or Download Dependencies
       run: |
         brew install curl unzip 7zip
-        #brew install cmake
         #brew install llvm@15
         #brew link llvm@15
         curl -L https://github.com/opencv/opencv/archive/${{ env.OPENCV_VERSION }}.tar.gz -o opencv-${{ env.OPENCV_VERSION }}.tar.gz
-        curl -L https://github.com/alexey-lysiuk/macos-sdk/releases/download/13.3/MacOSX13.3.tar.xz -o MacOSX13.3.tar.xz
-        7z x MacOSX13.3.tar.xz -r -o.
-        tar --extract --directory=. --file=MacOSX13.3.tar
-        brew install botantony/cmake3/cmake3
-        export PATH="$(brew --prefix cmake3)/bin:${PATH}"
+        brew install cmake
         cmake --version
         ls -la
 
@@ -37,19 +32,14 @@ jobs:
         export WSP_ROOT=$PWD
         tar -xf opencv-${{ env.OPENCV_VERSION }}.tar.gz
         rm -f opencv-${{ env.OPENCV_VERSION }}.tar.gz
-        export SDKROOT=$PWD/MacOSX13.3.sdk
-        export LIBRARY_PATH=$LIBRARY_PATH:$SDKROOT/usr/lib
+        #export SDKROOT=$PWD/MacOSX13.3.sdk
+        #export LIBRARY_PATH=$LIBRARY_PATH:$SDKROOT/usr/lib
         mkdir build-arm64
         echo ~~~~~~~~~~~~ arm64 build begin ~~~~~~~~~~~~
         cflags="-arch arm64 -isysroot macosx -Wno-unused-local-typedef -Wno-unused-function -DNDEBUG -g -O3 -pipe -fPIC -fcxx-exceptions"
-        export PATH="$(brew --prefix cmake3)/bin:${PATH}"
-        #export PATH="/opt/homebrew/opt/llvm@15/bin:$PATH"
-        #export CC="/opt/homebrew/opt/llvm@15/bin/clang"
-        #export CXX="/opt/homebrew/opt/llvm@15/bin/clang++"
-        export LDFLAGS="-arch arm64 -stdlib=libc++ -L$SDKROOT/usr/lib"
-        export CFLAGS="$cflags -I$SDKROOT/usr/include"
-        export CXXFLAGS="$cflags -std=c++11 -stdlib=libc++ -I$SDKROOT/usr/include"
-        #export CMAKE_PREFIX_PATH="/opt/homebrew/opt/llvm@15"
+        export LDFLAGS="-arch arm64 -stdlib=libc++"
+        export CFLAGS="$cflags"
+        export CXXFLAGS="$cflags"
         which ar ranlib clang clang++
         cd build-arm64
         cmake ../opencv-${{ env.OPENCV_VERSION }} \
