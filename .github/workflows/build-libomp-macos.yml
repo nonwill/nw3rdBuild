@@ -17,8 +17,10 @@ jobs:
         include:
           - os: macos-latest
             arch: arm64
+            omppath: /opt/homebrew/opt/libom/
           - os: macos-15-intel
             arch: x86_64
+            omppath: /usr/local/opt/libomp/
 
     steps:
       - name: Build libomp for macOS ${{ matrix.arch }}
@@ -32,7 +34,7 @@ jobs:
           tree --version
           brew install libomp
           mkdir libomp
-          cp -R /opt/local/include/libomp/ ./libomp/
+          cp -R ${{ matrix.omppath }} ./libomp/
           tree ./libomp
 
           zip -r libomp-osx-${{ matrix.arch }}.zip ./libomp
@@ -56,7 +58,7 @@ jobs:
           brew uninstall libomp
           rm -rf libomp/*
           brew install -universal libomp
-          cp -R /opt/local/include/libomp/ ./libomp/
+          cp -R ${{ matrix.omppath }} ./libomp/
           tree ./libomp
 
           zip -r libomp-osx-universal-${{ matrix.arch }}.zip ./libomp
