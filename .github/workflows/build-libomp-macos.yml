@@ -1,0 +1,75 @@
+name: Build libomp for macOS
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/build-libomp-macos.yml'
+
+jobs:
+  buid-shared:
+    if: true
+    name: ${{ matrix.os }} ${{ matrix.arch }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-latest
+            arch: arm64
+          - os: macos-15-intel
+            arch: x86_64
+
+    steps:
+      - name: Build libomp for macOS ${{ matrix.arch }}
+        id: vars
+        shell: bash
+        run: |
+          brew update
+          brew install cmake
+          cmake --version
+          brew install tree 
+          tree --version
+          brew install libomp
+          mkdir libomp
+          cp -R /opt/local/include/libomp/ ./libomp/
+          tree ./libomp
+
+          zip -r libomp-osx-${{ matrix.arch }}.zip ./libomp
+          pwd && ls -la
+          echo "update_date=$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
+
+      - name: Upload libomp-osx-${{ matrix.arch }}.zip
+        uses: svenstaro/upload-release-action@v2
+        with:
+          file_glob: true
+          file: "./*.zip"
+          overwrite: true
+          tag: libomp-macos
+          release_name: Build of libomp-osx
+          body: |
+            date: ${{ steps.vars.outputs.update_date }}
+
+      - name: Build libomp for macOS ${{ matrix.arch }}
+        shell: bash
+        run: |
+          brew uninstall libomp
+          rm -rf libomp/*
+          brew install -universal libomp
+          cp -R /opt/local/include/libomp/ ./libomp/
+          tree ./libomp
+
+          zip -r libomp-osx-universal-${{ matrix.arch }}.zip ./libomp
+          pwd && ls -la
+          echo "update_date=$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
+
+      - name: Upload libomp-osx-${{ matrix.arch }}.zip
+        uses: svenstaro/upload-release-action@v2
+        with:
+          file_glob: true
+          file: "./*.zip"
+          overwrite: true
+          tag: libomp-macos
+          release_name: Build of libomp-osx
+          body: |
+            date: ${{ steps.vars.outputs.update_date }}
