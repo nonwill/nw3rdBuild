@@ -28,50 +28,83 @@ jobs:
         shell: bash
         run: |
           brew update
-          brew install cmake
+          brew install cmake tree 7zip
           cmake --version
-          brew install tree 
           tree --version
           brew install libomp
+
           mkdir libomp
           cp -R ${{ matrix.omppath }} ./libomp/
           tree ./libomp
 
-          zip -r libomp-osx-${{ matrix.arch }}.zip ./libomp
+          cd ./libomp
+          7z -mx5 a ../libomp-osx-${{ matrix.arch }}.7z *
+          cd ..
+
           pwd && ls -la
+
           echo "update_date=$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
 
-      - name: Upload libomp-osx-${{ matrix.arch }}.zip
+      - name: Upload libomp-osx-${{ matrix.arch }}.7z
         uses: svenstaro/upload-release-action@v2
         with:
           file_glob: true
-          file: "./*.zip"
+          file: "./*.7z"
           overwrite: true
           tag: libomp-macos
           release_name: Build of libomp-osx
           body: |
             date: ${{ steps.vars.outputs.update_date }}
 
-      - name: Build libomp for macOS ${{ matrix.arch }}
+  make-shared:
+    needs: buid-shared
+    runs-on: macos-15-intel
+    steps:
+      - name: Build libomp for universal
+        id: vars
         shell: bash
         run: |
-          brew uninstall libomp
-          rm -rf libomp/*
-          brew install --universal libomp
-          cp -R ${{ matrix.omppath }} ./libomp/
-          tree ./libomp
+          export WSP_ROOT=$PWD
+          brew install curl 7zip tree
+          curl -L https://github.com/nonwill/nw3rdBuild/releases/download/libomp-macos/libomp-osx-x86_64.7z -o libomp-osx-x86_64.7z
+          curl -L https://github.com/nonwill/nw3rdBuild/releases/download/libomp-macos/libomp-osx-arm64.7z -o libomp-osx-arm64.7z
 
-          zip -r libomp-osx-universal-${{ matrix.arch }}.zip ./libomp
+          7z x  libomp-osx-x86_64.7z -r -o$WSP_ROOT/x86_64
+          7z x  libomp-osx-arm64.7z -r -o$WSP_ROOT/arm64
+
+          tree ./x86_64
+          tree ./arm64
+
+          mkdir -p $WSP_ROOT/libomp-osx-universal/lib
+          cp -R $WSP_ROOT/x86_64/include $WSP_ROOT/libomp-osx-universal
+          cp -v $WSP_ROOT/x86_64/README.md $WSP_ROOT/libomp-osx-universal/README.md
+          cp -v $WSP_ROOT/x86_64/LICENSE.TXT $WSP_ROOT/libomp-osx-universal/LICENSE.TXT
+
+          lipo \
+                $WSP_ROOT/x86_64/lib/libomp.a \
+                $WSP_ROOT/arm64/lib/libomp.a \
+                -create -output $WSP_ROOT/libomp-osx-universal/lib/libomp.a
+          lipo \
+                $WSP_ROOT/x86_64/lib/libomp.dylib \
+                $WSP_ROOT/arm64/lib/libomp.dylib \
+                -create -output $WSP_ROOT/libomp-osx-universal/lib/libomp.dylib
+
+          cd $WSP_ROOT/libomp-osx-universal
+          7z -mx5 a ../libomp-osx-universal.7z *
+          cd ..
+
           pwd && ls -la
+
           echo "update_date=$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
 
-      - name: Upload libomp-osx-${{ matrix.arch }}.zip
+      - name: Upload libomp-osx-universal.7z
         uses: svenstaro/upload-release-action@v2
         with:
           file_glob: true
-          file: "./*.zip"
+          file: "./*.7z"
           overwrite: true
           tag: libomp-macos
-          release_name: Build of libomp-osx
+          release_name: Build of libomp-osx-universal for macOS universal
           body: |
             date: ${{ steps.vars.outputs.update_date }}
+
