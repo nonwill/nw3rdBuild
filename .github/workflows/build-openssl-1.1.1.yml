@@ -52,9 +52,10 @@ jobs:
         curl -L https://mirrors.slackware.com/slackware/slackware/patches/source/openssl/0007-openssl-1.1.1ze-CVE-2025-68160_CVE-2025-69418_CVE-2025-69419_CVE-2025-69420_CVE-2025-69421_CVE-2026-22795_CVE-2026-22796.patch -o 0007-openssl-1.1.1ze-CVE-2025-68160_CVE-2025-69418_CVE-2025-69419_CVE-2025-69420_CVE-2025-69421_CVE-2026-22795_CVE-2026-22796.patch
         curl -L https://mirrors.slackware.com/slackware/slackware/patches/source/openssl/0008-openssl-1.1.1zg-CVE-2026-28387_CVE-2026-28388__CVE-2026-28389_CVE-2026-28390.patch -o 0008-openssl-1.1.1zg-CVE-2026-28387_CVE-2026-28388__CVE-2026-28389_CVE-2026-28390.patch
         curl -L https://mirrors.slackware.com/slackware/slackware/patches/source/openssl/0009-openssl-1.1.1zh-CVE-2026-34180_CVE-2026-42766_CVE-2026-45447_CVE-2026-7383_CVE-2026-9076.patch -o 0009-openssl-1.1.1zh-CVE-2026-34180_CVE-2026-42766_CVE-2026-45447_CVE-2026-7383_CVE-2026-9076.patch
-        dir
 
-        tar -xvf $CWD/openssl-1.1.1w.tar.gz || exit 1
+        ls -la
+
+        tar -xvf openssl-1.1.1w.tar.gz || exit 1
         cd openssl-1.1.1w
 
         # Fix pod syntax errors which are fatal wih a newer perl:
