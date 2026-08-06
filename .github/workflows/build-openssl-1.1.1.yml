@@ -13,82 +13,7 @@ env:
   OpenSSL_VERSION: "1.1.1zh"
 
 jobs:
-  build_with_msvc-2019:
-    runs-on: windows-2022
-    steps:
-    - uses: actions/checkout@v4
-
-    - uses: shogo82148/actions-setup-perl@v1
-      with:
-        distribution: strawberry
-
-    - name: Install or Download Dependencies
-      run: |
-        perl --version
-        curl -L https://github.com/kzalewski/openssl-1.1.1/archive/refs/tags/${{ env.OpenSSL_VERSION }}.tar.gz -o openssl-${{ env.OpenSSL_VERSION }}.tar.gz
-        dir
-
-    - name: Setup msvc2019 x64 Environment
-      uses: ilammy/msvc-dev-cmd@v1
-      with: 
-        toolset: 14.29
-
-    - name: msvc2019 x64 Build OpenSSL-${{ env.OpenSSL_VERSION }}
-      shell: cmd
-      run: |
-        echo ${{ github.workspace }}
-        echo ~~~~~~~~~~~~ msvc2019 build begin ~~~~~~~~~~~~
-        cl.exe
-        tar -xf openssl-${{ env.OpenSSL_VERSION }}.tar.gz
-        cd openssl-1.1.1-${{ env.OpenSSL_VERSION }}
-        perl.exe Configure no-asm shared VC-WIN64A --prefix=${{ github.workspace }}/openssl-${{ env.OpenSSL_VERSION }}-msvc2019-x64 --openssldir=${{ github.workspace }}/openssl-${{ env.OpenSSL_VERSION }}-msvc2019-x64/ssl && nmake && nmake install
-        cd ..
-        cd ${{ github.workspace }}/openssl-${{ env.OpenSSL_VERSION }}-msvc2019-x64 && 7z -mx5 a ../openssl-${{ env.OpenSSL_VERSION }}-msvc2019-x64.7z *
-        cd ..
-        echo ~~~~~~~~~~~~ msvc2019 build end ~~~~~~~~~~~~
-        rm -rf openssl-1.1.1-${{ env.OpenSSL_VERSION }}
-        rm -rf ${{ github.workspace }}/openssl-${{ env.OpenSSL_VERSION }}-msvc2019-x64
-
-    - name: Setup msvc2019 x86 Environment
-      uses: ilammy/msvc-dev-cmd@v1
-      with:
-        arch: amd64_x86
-        toolset: 14.29
-
-    - name: msvc2019 x86 Build OpenSSL-${{ env.OpenSSL_VERSION }}
-      shell: cmd
-      run: |
-        echo ${{ github.workspace }}
-        echo ~~~~~~~~~~~~ msvc2019 build begin ~~~~~~~~~~~~
-        cl.exe
-        tar -xf openssl-${{ env.OpenSSL_VERSION }}.tar.gz
-        cd openssl-1.1.1-${{ env.OpenSSL_VERSION }}
-        perl.exe Configure no-asm shared VC-WIN32 --prefix=${{ github.workspace }}/openssl-${{ env.OpenSSL_VERSION }}-msvc2019-x86 --openssldir=${{ github.workspace }}/openssl-${{ env.OpenSSL_VERSION }}-msvc2019-x86/ssl && nmake && nmake install
-        cd ..
-        cd ${{ github.workspace }}/openssl-${{ env.OpenSSL_VERSION }}-msvc2019-x86 && 7z -mx5 a ../openssl-${{ env.OpenSSL_VERSION }}-msvc2019-x86.7z *
-        cd ..
-        echo ~~~~~~~~~~~~ msvc2019 build end ~~~~~~~~~~~~
-        rm -rf openssl-1.1.1-${{ env.OpenSSL_VERSION }}
-        rm -rf ${{ github.workspace }}/openssl-${{ env.OpenSSL_VERSION }}-msvc2019-x86
-
-    - uses: andreaswilli/delete-release-assets-action@v4.0.0
-      with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        tag: openssl-${{ env.OpenSSL_VERSION }}
-        deleteOnlyFromDrafts: false
-
-    - name: Upload OpenSSL-${{ env.OpenSSL_VERSION }}
-      uses: softprops/action-gh-release@v2
-      with:
-        tag_name: openssl-${{ env.OpenSSL_VERSION }}
-        name: Latest build of OpenSSL-${{ env.OpenSSL_VERSION }}
-        draft: false
-        prerelease: true
-        files: |
-          ./openssl-${{ env.OpenSSL_VERSION }}-*.7z
-
   build_with_mingw-gcc:
-    needs: build_with_msvc-2019
     runs-on: windows-2022
     defaults:
       run:
@@ -115,12 +40,50 @@ jobs:
 
     - uses: actions/checkout@v4
 
+    - name: Update openssl-${{ env.OpenSSL_VERSION }} sources
+      run: |
+        curl -L https://mirrors.slackware.com/slackware/slackware/patches/source/openssl/openssl-1.1.1w.tar.gz -o openssl-1.1.1w.tar.gz
+        curl -L https://mirrors.slackware.com/slackware/slackware/patches/source/openssl/0001-openssl-1.1.1x_CVE-2023-5678_CVE-2024-0727.patch -o 0001-openssl-1.1.1x_CVE-2023-5678_CVE-2024-0727.patch
+        curl -L https://mirrors.slackware.com/slackware/slackware/patches/source/openssl/0002-openssl-1.1.1y_CVE-2024-2511_CVE-2024-4741.patch -o 0002-openssl-1.1.1y_CVE-2024-2511_CVE-2024-4741.patch
+        curl -L https://mirrors.slackware.com/slackware/slackware/patches/source/openssl/0003-openssl-1.1.1za_CVE-2024-5535.patch -o 0003-openssl-1.1.1za_CVE-2024-5535.patch
+        curl -L https://mirrors.slackware.com/slackware/slackware/patches/source/openssl/0004-openssl-1.1.1zb_CVE_2024_9143.patch -o 0004-openssl-1.1.1zb_CVE_2024_9143.patch
+        curl -L https://mirrors.slackware.com/slackware/slackware/patches/source/openssl/0005-openssl-1.1.1zb_p2_CVE_2024_13176.patch -o 0005-openssl-1.1.1zb_p2_CVE_2024_13176.patch
+        curl -L https://mirrors.slackware.com/slackware/slackware/patches/source/openssl/0006-openssl-1.1.1zd_CVE_2025_9230.patch -o 0006-openssl-1.1.1zd_CVE_2025_9230.patch
+        curl -L https://mirrors.slackware.com/slackware/slackware/patches/source/openssl/0007-openssl-1.1.1ze-CVE-2025-68160_CVE-2025-69418_CVE-2025-69419_CVE-2025-69420_CVE-2025-69421_CVE-2026-22795_CVE-2026-22796.patch -o 0007-openssl-1.1.1ze-CVE-2025-68160_CVE-2025-69418_CVE-2025-69419_CVE-2025-69420_CVE-2025-69421_CVE-2026-22795_CVE-2026-22796.patch
+        curl -L https://mirrors.slackware.com/slackware/slackware/patches/source/openssl/0008-openssl-1.1.1zg-CVE-2026-28387_CVE-2026-28388__CVE-2026-28389_CVE-2026-28390.patch -o 0008-openssl-1.1.1zg-CVE-2026-28387_CVE-2026-28388__CVE-2026-28389_CVE-2026-28390.patch
+        curl -L https://mirrors.slackware.com/slackware/slackware/patches/source/openssl/0009-openssl-1.1.1zh-CVE-2026-34180_CVE-2026-42766_CVE-2026-45447_CVE-2026-7383_CVE-2026-9076.patch -o 0009-openssl-1.1.1zh-CVE-2026-34180_CVE-2026-42766_CVE-2026-45447_CVE-2026-7383_CVE-2026-9076.patch
+        dir
+
+        tar -xvf $CWD/openssl-1.1.1w.tar.gz || exit 1
+        cd openssl-1.1.1w
+
+        # Fix pod syntax errors which are fatal wih a newer perl:
+        find . -name "*.pod" -exec sed -i "s/^\=item \([0-9]\)\(\ \|$\)/\=item C<\1>/g" {} \;
+
+        # Apply patches to fix CVEs that were fixed by the 1.1.1{x,y,za} releases that
+        # were only available to subscribers to OpenSSL's premium extended support.
+        # These patches were prepared by backporting commits from the OpenSSL-3.0 repo.
+        # Thanks to Ken Zalewski!
+        cat ../0001-openssl-1.1.1x_CVE-2023-5678_CVE-2024-0727.patch | patch -p1 --verbose || exit 1
+        cat ../0002-openssl-1.1.1y_CVE-2024-2511_CVE-2024-4741.patch | patch -p1 --verbose || exit 1
+        cat ../0003-openssl-1.1.1za_CVE-2024-5535.patch | patch -p1 --verbose || exit 1
+        cat ../0004-openssl-1.1.1zb_CVE_2024_9143.patch | patch -p1 --verbose || exit 1
+        cat ../0005-openssl-1.1.1zb_p2_CVE_2024_13176.patch | patch -p1 --verbose || exit 1
+        cat ../0006-openssl-1.1.1zd_CVE_2025_9230.patch | patch -p1 --verbose || exit 1
+        cat ../0007-openssl-1.1.1ze-CVE-2025-68160_CVE-2025-69418_CVE-2025-69419_CVE-2025-69420_CVE-2025-69421_CVE-2026-22795_CVE-2026-22796.patch | patch -p1 --verbose || exit 1
+        cat ../0008-openssl-1.1.1zg-CVE-2026-28387_CVE-2026-28388__CVE-2026-28389_CVE-2026-28390.patch | patch -p1 --verbose || exit 1
+        cat ../0009-openssl-1.1.1zh-CVE-2026-34180_CVE-2026-42766_CVE-2026-45447_CVE-2026-7383_CVE-2026-9076.patch | patch -p1 --verbose || exit 1
+
+        cd ..
+
+        mv openssl-1.1.1w openssl-${{ env.OpenSSL_VERSION }}
+        tar -zcvf openssl-${{ env.OpenSSL_VERSION }}.tar.gz openssl-${{ env.OpenSSL_VERSION }} && ls -la
+
     - name: Install or Download Dependencies
       run: |
         perl --version
         mkdir deps
         cd deps && mkdir mingw64 && cd ..
-        curl -L https://github.com/kzalewski/openssl-1.1.1/archive/refs/tags/${{ env.OpenSSL_VERSION }}.tar.gz -o openssl-${{ env.OpenSSL_VERSION }}.tar.gz
         curl -L https://github.com/nonwill/mingw-distro/releases/download/mingw64-gcc15-crt_latest/mingw-w64+gcc-i686-all.7z -o mingw-w64_gcc-i686-all.7z
         curl -L https://github.com/nonwill/mingw-distro/releases/download/mingw64-gcc15-crt_latest/mingw-w64+gcc-x86_64-all.7z -o mingw-w64_gcc-x86_64-all.7z
         dir
@@ -135,8 +98,8 @@ jobs:
         export PATH=$USER_MINGW_DIR/bin:$PATH
         gcc -v
         echo ~~~~~~~~~~~~ mingw32 build begin ~~~~~~~~~~~~
-        tar -xf openssl-${{ env.OpenSSL_VERSION }}.tar.gz
-        cd openssl-1.1.1-${{ env.OpenSSL_VERSION }}
+        #tar -xf openssl-${{ env.OpenSSL_VERSION }}.tar.gz
+        cd openssl-${{ env.OpenSSL_VERSION }}
         perl.exe Configure no-asm no-idea no-mdc2 no-rc5 shared mingw \
             --prefix=$WSP_ROOT/openssl-${{ env.OpenSSL_VERSION }}-mingw64 \
             --openssldir=$WSP_ROOT/openssl-${{ env.OpenSSL_VERSION }}-mingw64/ssl && \
@@ -148,7 +111,7 @@ jobs:
         7z -mx5 a ../openssl-${{ env.OpenSSL_VERSION }}-mingw64-i686.7z *
         cd ..
         echo ~~~~~~~~~~~~ mingw32 build end ~~~~~~~~~~~~
-        rm -rf openssl-1.1.1-${{ env.OpenSSL_VERSION }}
+        rm -rf openssl-${{ env.OpenSSL_VERSION }}
         rm -rf $WSP_ROOT/openssl-${{ env.OpenSSL_VERSION }}-mingw64
         rm -rf $USER_MINGW_DIR
         echo ~~~~~~~~~~~~ mingw64 build prepare ~~~~~~~~~~~~
@@ -157,7 +120,7 @@ jobs:
         gcc -v
         echo ~~~~~~~~~~~~ mingw64 build begin ~~~~~~~~~~~~
         tar -xf openssl-${{ env.OpenSSL_VERSION }}.tar.gz
-        cd openssl-1.1.1-${{ env.OpenSSL_VERSION }}
+        cd openssl-${{ env.OpenSSL_VERSION }}
         perl.exe Configure no-asm no-idea no-mdc2 no-rc5 shared mingw64 \
             --prefix=$WSP_ROOT/openssl-${{ env.OpenSSL_VERSION }}-mingw64 \
             --openssldir=$WSP_ROOT/openssl-${{ env.OpenSSL_VERSION }}-mingw64/ssl && \
@@ -169,7 +132,7 @@ jobs:
         7z -mx5 a ../openssl-${{ env.OpenSSL_VERSION }}-mingw64-x86_64.7z *
         cd ..
         echo ~~~~~~~~~~~~ mingw64 build end ~~~~~~~~~~~~
-        rm -rf openssl-1.1.1-${{ env.OpenSSL_VERSION }}
+        rm -rf openssl-${{ env.OpenSSL_VERSION }}
         rm -rf $WSP_ROOT/openssl-${{ env.OpenSSL_VERSION }}-mingw64
 
     - name: Setup msvc2019 x64 Environment
@@ -185,10 +148,16 @@ jobs:
         export USER_MINGW_DIR=$WSP_ROOT/deps/mingw64
         export PATH=$USER_MINGW_DIR/bin:$PATH
         echo "update_date=$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
-        echo "vc_install_dir=$VCToolsInstallDir" >> $GITHUB_OUTPUT
+        #echo "vc_install_dir=$VCToolsInstallDir" >> $GITHUB_OUTPUT
         echo "cl_exe_info=$(cl > cl_version 2>&1 && head -n 1 cl_version)" >> $GITHUB_OUTPUT
         echo "gcc_exe_info=$(gcc --version > gcc_version 2>&1 && head -n 1 gcc_version)" >> $GITHUB_OUTPUT
         rm -rf $USER_MINGW_DIR
+
+    - uses: andreaswilli/delete-release-assets-action@v4.0.0
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        tag: openssl-${{ env.OpenSSL_VERSION }}
+        deleteOnlyFromDrafts: false
 
     - name: Upload OpenSSL-${{ env.OpenSSL_VERSION }}
       uses: softprops/action-gh-release@v2
@@ -199,9 +168,79 @@ jobs:
           date: ${{ steps.vars.outputs.update_date }}
           cl: ${{ steps.vars.outputs.cl_exe_info }}
           gcc: ${{ steps.vars.outputs.gcc_exe_info }}
+          source: https://mirrors.slackware.com/slackware/slackware/patches/source/openssl/
+        draft: false
+        prerelease: true
+        files: |
+          ./openssl-${{ env.OpenSSL_VERSION }}-*.7z
+          ./openssl-${{ env.OpenSSL_VERSION }}.tar.gz
+
+  build_with_msvc-2019:
+    needs: build_with_mingw-gcc
+    runs-on: windows-2022
+    steps:
+    - uses: actions/checkout@v4
+
+    - uses: shogo82148/actions-setup-perl@v1
+      with:
+        distribution: strawberry
+
+    - name: Install or Download Dependencies
+      run: |
+        perl --version
+        curl -L https://github.com/nonwill/nw3rdBuild/releases/download/openssl-${{ env.OpenSSL_VERSION }}/openssl-${{ env.OpenSSL_VERSION }}.tar.gz -o openssl-${{ env.OpenSSL_VERSION }}.tar.gz
+        dir
+
+    - name: Setup msvc2019 x64 Environment
+      uses: ilammy/msvc-dev-cmd@v1
+      with: 
+        toolset: 14.29
+
+    - name: msvc2019 x64 Build OpenSSL-${{ env.OpenSSL_VERSION }}
+      shell: cmd
+      run: |
+        echo ${{ github.workspace }}
+        echo ~~~~~~~~~~~~ msvc2019 build begin ~~~~~~~~~~~~
+        cl.exe
+        tar -xf openssl-${{ env.OpenSSL_VERSION }}.tar.gz
+        cd openssl-${{ env.OpenSSL_VERSION }}
+        perl.exe Configure no-asm shared VC-WIN64A --prefix=${{ github.workspace }}/openssl-${{ env.OpenSSL_VERSION }}-msvc2019-x64 --openssldir=${{ github.workspace }}/openssl-${{ env.OpenSSL_VERSION }}-msvc2019-x64/ssl && nmake && nmake install
+        cd ..
+        cd ${{ github.workspace }}/openssl-${{ env.OpenSSL_VERSION }}-msvc2019-x64 && 7z -mx5 a ../openssl-${{ env.OpenSSL_VERSION }}-msvc2019-x64.7z *
+        cd ..
+        echo ~~~~~~~~~~~~ msvc2019 build end ~~~~~~~~~~~~
+        rm -rf openssl-${{ env.OpenSSL_VERSION }}
+        rm -rf ${{ github.workspace }}/openssl-${{ env.OpenSSL_VERSION }}-msvc2019-x64
+
+    - name: Setup msvc2019 x86 Environment
+      uses: ilammy/msvc-dev-cmd@v1
+      with:
+        arch: amd64_x86
+        toolset: 14.29
+
+    - name: msvc2019 x86 Build OpenSSL-${{ env.OpenSSL_VERSION }}
+      shell: cmd
+      run: |
+        echo ${{ github.workspace }}
+        echo ~~~~~~~~~~~~ msvc2019 build begin ~~~~~~~~~~~~
+        cl.exe
+        tar -xf openssl-${{ env.OpenSSL_VERSION }}.tar.gz
+        cd openssl-${{ env.OpenSSL_VERSION }}
+        perl.exe Configure no-asm shared VC-WIN32 --prefix=${{ github.workspace }}/openssl-${{ env.OpenSSL_VERSION }}-msvc2019-x86 --openssldir=${{ github.workspace }}/openssl-${{ env.OpenSSL_VERSION }}-msvc2019-x86/ssl && nmake && nmake install
+        cd ..
+        cd ${{ github.workspace }}/openssl-${{ env.OpenSSL_VERSION }}-msvc2019-x86 && 7z -mx5 a ../openssl-${{ env.OpenSSL_VERSION }}-msvc2019-x86.7z *
+        cd ..
+        echo ~~~~~~~~~~~~ msvc2019 build end ~~~~~~~~~~~~
+        rm -rf openssl-${{ env.OpenSSL_VERSION }}
+        rm -rf ${{ github.workspace }}/openssl-${{ env.OpenSSL_VERSION }}-msvc2019-x86
+
+    - name: Upload OpenSSL-${{ env.OpenSSL_VERSION }}
+      uses: softprops/action-gh-release@v2
+      with:
+        tag_name: openssl-${{ env.OpenSSL_VERSION }}
+        name: Latest build of OpenSSL-${{ env.OpenSSL_VERSION }}
         draft: false
         prerelease: false
         make_latest: true
         files: |
           ./openssl-${{ env.OpenSSL_VERSION }}-*.7z
-          ./openssl-${{ env.OpenSSL_VERSION }}.tar.gz
