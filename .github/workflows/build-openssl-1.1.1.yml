@@ -42,16 +42,23 @@ jobs:
 
     - name: Update openssl-${{ env.OpenSSL_VERSION }} sources
       run: |
-        curl -L https://mirrors.slackware.com/slackware/slackware/patches/source/openssl/openssl-1.1.1w.tar.gz -o openssl-1.1.1w.tar.gz
-        curl -L https://mirrors.slackware.com/slackware/slackware/patches/source/openssl/0001-openssl-1.1.1x_CVE-2023-5678_CVE-2024-0727.patch -o 0001-openssl-1.1.1x_CVE-2023-5678_CVE-2024-0727.patch
-        curl -L https://mirrors.slackware.com/slackware/slackware/patches/source/openssl/0002-openssl-1.1.1y_CVE-2024-2511_CVE-2024-4741.patch -o 0002-openssl-1.1.1y_CVE-2024-2511_CVE-2024-4741.patch
-        curl -L https://mirrors.slackware.com/slackware/slackware/patches/source/openssl/0003-openssl-1.1.1za_CVE-2024-5535.patch -o 0003-openssl-1.1.1za_CVE-2024-5535.patch
-        curl -L https://mirrors.slackware.com/slackware/slackware/patches/source/openssl/0004-openssl-1.1.1zb_CVE_2024_9143.patch -o 0004-openssl-1.1.1zb_CVE_2024_9143.patch
-        curl -L https://mirrors.slackware.com/slackware/slackware/patches/source/openssl/0005-openssl-1.1.1zb_p2_CVE_2024_13176.patch -o 0005-openssl-1.1.1zb_p2_CVE_2024_13176.patch
-        curl -L https://mirrors.slackware.com/slackware/slackware/patches/source/openssl/0006-openssl-1.1.1zd_CVE_2025_9230.patch -o 0006-openssl-1.1.1zd_CVE_2025_9230.patch
-        curl -L https://mirrors.slackware.com/slackware/slackware/patches/source/openssl/0007-openssl-1.1.1ze-CVE-2025-68160_CVE-2025-69418_CVE-2025-69419_CVE-2025-69420_CVE-2025-69421_CVE-2026-22795_CVE-2026-22796.patch -o 0007-openssl-1.1.1ze-CVE-2025-68160_CVE-2025-69418_CVE-2025-69419_CVE-2025-69420_CVE-2025-69421_CVE-2026-22795_CVE-2026-22796.patch
-        curl -L https://mirrors.slackware.com/slackware/slackware/patches/source/openssl/0008-openssl-1.1.1zg-CVE-2026-28387_CVE-2026-28388__CVE-2026-28389_CVE-2026-28390.patch -o 0008-openssl-1.1.1zg-CVE-2026-28387_CVE-2026-28388__CVE-2026-28389_CVE-2026-28390.patch
-        curl -L https://mirrors.slackware.com/slackware/slackware/patches/source/openssl/0009-openssl-1.1.1zh-CVE-2026-34180_CVE-2026-42766_CVE-2026-45447_CVE-2026-7383_CVE-2026-9076.patch -o 0009-openssl-1.1.1zh-CVE-2026-34180_CVE-2026-42766_CVE-2026-45447_CVE-2026-7383_CVE-2026-9076.patch
+        curl -L https://mirrors.slackware.com/slackware/slackware/patches/source/openssl/openssl-1.1.1w.tar.gz -o openssl-1.1.1w.tar.gz || exit 1
+        patch_files=(
+          "0001-openssl-1.1.1x_CVE-2023-5678_CVE-2024-0727.patch"
+          "0002-openssl-1.1.1y_CVE-2024-2511_CVE-2024-4741.patch"
+          "0003-openssl-1.1.1za_CVE-2024-5535.patch"
+          "0004-openssl-1.1.1zb_CVE_2024_9143.patch"
+          "0005-openssl-1.1.1zb_p2_CVE_2024_13176.patch"
+          "0006-openssl-1.1.1zd_CVE_2025_9230.patch"
+          "0007-openssl-1.1.1ze-CVE-2025-68160_CVE-2025-69418_CVE-2025-69419_CVE-2025-69420_CVE-2025-69421_CVE-2026-22795_CVE-2026-22796.patch"
+          "0008-openssl-1.1.1zg-CVE-2026-28387_CVE-2026-28388__CVE-2026-28389_CVE-2026-28390.patch"
+          "0009-openssl-1.1.1zh-CVE-2026-34180_CVE-2026-42766_CVE-2026-45447_CVE-2026-7383_CVE-2026-9076.patch"
+        )
+
+        for patch_file in "${patch_files[@]}"; do
+          url=https://mirrors.slackware.com/slackware/slackware/patches/source/openssl/$patch_file
+          curl -L $url -o $patch_file || exit 1
+        done
 
         ls -la
 
@@ -65,15 +72,9 @@ jobs:
         # were only available to subscribers to OpenSSL's premium extended support.
         # These patches were prepared by backporting commits from the OpenSSL-3.0 repo.
         # Thanks to Ken Zalewski!
-        cat ../0001-openssl-1.1.1x_CVE-2023-5678_CVE-2024-0727.patch | patch -p1 --verbose || exit 1
-        cat ../0002-openssl-1.1.1y_CVE-2024-2511_CVE-2024-4741.patch | patch -p1 --verbose || exit 1
-        cat ../0003-openssl-1.1.1za_CVE-2024-5535.patch | patch -p1 --verbose || exit 1
-        cat ../0004-openssl-1.1.1zb_CVE_2024_9143.patch | patch -p1 --verbose || exit 1
-        cat ../0005-openssl-1.1.1zb_p2_CVE_2024_13176.patch | patch -p1 --verbose || exit 1
-        cat ../0006-openssl-1.1.1zd_CVE_2025_9230.patch | patch -p1 --verbose || exit 1
-        cat ../0007-openssl-1.1.1ze-CVE-2025-68160_CVE-2025-69418_CVE-2025-69419_CVE-2025-69420_CVE-2025-69421_CVE-2026-22795_CVE-2026-22796.patch | patch -p1 --verbose || exit 1
-        cat ../0008-openssl-1.1.1zg-CVE-2026-28387_CVE-2026-28388__CVE-2026-28389_CVE-2026-28390.patch | patch -p1 --verbose || exit 1
-        cat ../0009-openssl-1.1.1zh-CVE-2026-34180_CVE-2026-42766_CVE-2026-45447_CVE-2026-7383_CVE-2026-9076.patch | patch -p1 --verbose || exit 1
+        for patch_file in "${patch_files[@]}"; do
+          cat ../$patch_file | patch -p1 --verbose || exit 1
+        done
 
         cd ..
 
@@ -85,8 +86,8 @@ jobs:
         perl --version
         mkdir deps
         cd deps && mkdir mingw64 && cd ..
-        curl -L https://github.com/nonwill/mingw-distro/releases/download/mingw64-gcc15-crt_latest/mingw-w64+gcc-i686-all.7z -o mingw-w64_gcc-i686-all.7z
-        curl -L https://github.com/nonwill/mingw-distro/releases/download/mingw64-gcc15-crt_latest/mingw-w64+gcc-x86_64-all.7z -o mingw-w64_gcc-x86_64-all.7z
+        curl -L https://github.com/nonwill/mingw-distro/releases/download/mingw64-gcc15-crt_latest/mingw-w64+gcc-i686-all.7z -o mingw-w64_gcc-i686-all.7z || exit 1
+        curl -L https://github.com/nonwill/mingw-distro/releases/download/mingw64-gcc15-crt_latest/mingw-w64+gcc-x86_64-all.7z -o mingw-w64_gcc-x86_64-all.7z || exit 1
         dir
 
     - name: MinGW Build OpenSSL-${{ env.OpenSSL_VERSION }}
@@ -189,7 +190,7 @@ jobs:
     - name: Install or Download Dependencies
       run: |
         perl --version
-        curl -L https://github.com/nonwill/nw3rdBuild/releases/download/openssl-${{ env.OpenSSL_VERSION }}/openssl-${{ env.OpenSSL_VERSION }}.tar.gz -o openssl-${{ env.OpenSSL_VERSION }}.tar.gz
+        curl -L https://github.com/nonwill/nw3rdBuild/releases/download/openssl-${{ env.OpenSSL_VERSION }}/openssl-${{ env.OpenSSL_VERSION }}.tar.gz -o openssl-${{ env.OpenSSL_VERSION }}.tar.gz || exit 1
         dir
 
     - name: Setup msvc2019 x64 Environment
