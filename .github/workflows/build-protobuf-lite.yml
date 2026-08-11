@@ -16,7 +16,7 @@ jobs:
   build_with_windows-2019:
     runs-on: windows-2022
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v7
 
     - name: Install or Download Dependencies
       run: |
@@ -83,8 +83,9 @@ jobs:
         rm -rf $WSP_ROOT/protobuf-${{ env.PROTOBUF_VERSION }}-mingw64
 
     - name: Setup msvc2019 x64 Environment
-      uses: ilammy/msvc-dev-cmd@v1
-      with: 
+      uses: TheMrMilchmann/setup-msvc-dev@v4
+      with:
+        arch: x64
         toolset: 14.29
 
     - name: Get date and Cl version
@@ -123,7 +124,7 @@ jobs:
         rm -rf $WSP_ROOT/protobuf-${{ env.PROTOBUF_VERSION }}-msvc2019-x64
 
     - name: Setup msvc2019 x86 Environment
-      uses: ilammy/msvc-dev-cmd@v1
+      uses: TheMrMilchmann/setup-msvc-dev@v4
       with:
         arch: amd64_x86
         toolset: 14.29
@@ -157,7 +158,7 @@ jobs:
         deleteOnlyFromDrafts: false
 
     - name: Upload Protocol Buffers ${{ env.PROTOBUF_VERSION }}
-      uses: softprops/action-gh-release@v2
+      uses: softprops/action-gh-release@v3
       with:
         tag_name: protobuf-3.${{ env.PROTOBUF_VERSION }}
         name: Latest build of Protocol Buffers cpp-3.${{ env.PROTOBUF_VERSION }}

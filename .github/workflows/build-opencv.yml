@@ -1,4 +1,4 @@
-name: Build OpenCV with mingw64 and msvc2019
+name: Build OpenCV for Windows and macOS
 
 on:
   push:
@@ -16,7 +16,7 @@ jobs:
   build_macos_intel:
     runs-on: macos-15-intel
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v7
     - name: Install or Download Dependencies
       run: |
         brew install curl unzip 7zip
@@ -54,7 +54,7 @@ jobs:
         echo ~~~~~~~~~~~~ x86_64 build end ~~~~~~~~~~~~
 
     - name: Upload opencv-${{ env.OPENCV_VERSION }}-x86_64
-      uses: softprops/action-gh-release@v2
+      uses: softprops/action-gh-release@v3
       with:
         tag_name: opencv-${{ env.OPENCV_VERSION }}
         name: Latest build of opencv-${{ env.OPENCV_VERSION }} for macOS
@@ -67,7 +67,7 @@ jobs:
   build_macos_arm64:
     runs-on: macos-latest
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v7
 
     - name: Install or Download Dependencies
       run: |
@@ -107,7 +107,7 @@ jobs:
         echo ~~~~~~~~~~~~ arm64 build end ~~~~~~~~~~~~
 
     - name: Upload opencv-${{ env.OPENCV_VERSION }}
-      uses: softprops/action-gh-release@v2
+      uses: softprops/action-gh-release@v3
       with:
         tag_name: opencv-${{ env.OPENCV_VERSION }}
         name: Latest build of opencv-${{ env.OPENCV_VERSION }} for macOS
@@ -121,7 +121,7 @@ jobs:
     needs: [build_macos_intel, build_macos_arm64]
     runs-on: macos-15-intel
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v7
     - name: Install or Download Dependencies
       run: |
         brew install curl 7zip
@@ -160,7 +160,7 @@ jobs:
         deleteOnlyFromDrafts: false
 
     - name: Upload opencv-${{ env.OPENCV_VERSION }}
-      uses: softprops/action-gh-release@v2
+      uses: softprops/action-gh-release@v3
       with:
         tag_name: opencv-${{ env.OPENCV_VERSION }}
         name: Latest build of opencv-${{ env.OPENCV_VERSION }} for macOS
@@ -176,7 +176,7 @@ jobs:
     needs: make_macos_universal
     runs-on: windows-2022
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v7
 
     - name: Install or Download Dependencies
       run: |
@@ -245,8 +245,9 @@ jobs:
         rm -rf $WSP_ROOT/opencv-${{ env.OPENCV_VERSION }}-mingw64
 
     - name: Setup msvc2019 x64 Environment
-      uses: ilammy/msvc-dev-cmd@v1
-      with: 
+      uses: TheMrMilchmann/setup-msvc-dev@v4
+      with:
+        arch: x64
         toolset: 14.29
 
     - name: Get date and Cl version
@@ -286,7 +287,7 @@ jobs:
         rm -rf $WSP_ROOT/opencv-${{ env.OPENCV_VERSION }}-msvc2019-x64
 
     - name: Setup msvc2019 x86 Environment
-      uses: ilammy/msvc-dev-cmd@v1
+      uses: TheMrMilchmann/setup-msvc-dev@v4
       with:
         arch: amd64_x86
         toolset: 14.29
@@ -315,7 +316,7 @@ jobs:
         rm -rf $WSP_ROOT/opencv-${{ env.OPENCV_VERSION }}-msvc2019-x86
 
     - name: Upload opencv-${{ env.OPENCV_VERSION }}
-      uses: softprops/action-gh-release@v2
+      uses: softprops/action-gh-release@v3
       with:
         tag_name: opencv-${{ env.OPENCV_VERSION }}
         name: Latest build of opencv-${{ env.OPENCV_VERSION }} for macOS and Windows
@@ -323,6 +324,7 @@ jobs:
           date: ${{ steps.vars.outputs.update_date }}
           cl: ${{ steps.vars.outputs.cl_exe_info }}
           gcc: ${{ steps.vars.outputs.gcc_exe_info }}
+          source: https://github.com/opencv/opencv/archive/${{ env.OPENCV_VERSION }}.tar.gz
         draft: false
         prerelease: false
         make_latest: true

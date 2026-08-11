@@ -4,7 +4,7 @@ on:
   push:
     branches: [main]
     paths:
-      - '.github/workflows/qtwebengine-release.yml'
+      - '.github/workflows/qtwebengine-release__.yml'
 
 env:
   WB_VERSION: "5.15.19"
@@ -13,7 +13,7 @@ jobs:
   Get_qtwebengine_release:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v7
     - name: Get and Package
       id: vars
       run: |
@@ -41,7 +41,7 @@ jobs:
         deleteOnlyFromDrafts: false
 
     - name: Upload qtwebengine-${{ env.WB_VERSION }}
-      uses: softprops/action-gh-release@v2
+      uses: softprops/action-gh-release@v3
       with:
         tag_name: qtwebengine-${{ env.WB_VERSION }}
         name:  qtwebengine-everywhere-src-${{ env.WB_VERSION }}
