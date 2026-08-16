@@ -48,7 +48,7 @@ jobs:
         gcc -v
         echo ~~~~~~~~~~~~ mingw32 build begin ~~~~~~~~~~~~
         cd build
-        cmake ../protobuf-${{ env.PROTOBUF_VERSION }} \
+        cmake ../protobuf-${{ env.PROTOBUF_VERSION }} -DCMAKE_CXX_STANDARD=17 \
             -G "MinGW Makefiles" \
             -DCMAKE_INSTALL_PREFIX=$WSP_ROOT/protobuf-${{ env.PROTOBUF_VERSION }}-mingw64 \
             `cat ../protobuf-options.txt` && \
@@ -68,7 +68,7 @@ jobs:
         gcc -v
         echo ~~~~~~~~~~~~ mingw64 build begin ~~~~~~~~~~~~
         cd build
-        cmake ../protobuf-${{ env.PROTOBUF_VERSION }} \
+        cmake ../protobuf-${{ env.PROTOBUF_VERSION }} -DCMAKE_CXX_STANDARD=17 \
             -G "MinGW Makefiles" \
             -DCMAKE_INSTALL_PREFIX=$WSP_ROOT/protobuf-${{ env.PROTOBUF_VERSION }}-mingw64 \
             `cat ../protobuf-options.txt` && \
@@ -109,7 +109,7 @@ jobs:
         echo ~~~~~~~~~~~~ msvc2019 build begin ~~~~~~~~~~~~
         cl
         cd build
-        cmake ../protobuf-${{ env.PROTOBUF_VERSION }} \
+        cmake ../protobuf-${{ env.PROTOBUF_VERSION }} -DCMAKE_CXX_STANDARD=17 \
             -G "NMake Makefiles" \
             -DCMAKE_MAKE_PROGRAM=$WSP_ROOT/deps/jom/jom.exe \
             -DCMAKE_INSTALL_PREFIX=$WSP_ROOT/protobuf-${{ env.PROTOBUF_VERSION }}-msvc2019-x64 \
@@ -137,7 +137,7 @@ jobs:
         echo ~~~~~~~~~~~~ msvc2019 build begin ~~~~~~~~~~~~
         cl
         cd build
-        cmake ../protobuf-${{ env.PROTOBUF_VERSION }} \
+        cmake ../protobuf-${{ env.PROTOBUF_VERSION }} -DCMAKE_CXX_STANDARD=17 \
             -G "NMake Makefiles" \
             -DCMAKE_MAKE_PROGRAM=$WSP_ROOT/deps/jom/jom.exe \
             -DCMAKE_INSTALL_PREFIX=$WSP_ROOT/protobuf-${{ env.PROTOBUF_VERSION }}-msvc2019-x86 \
