@@ -1,10 +1,10 @@
-name: Build protobuf-lite with mingw64 and msvc2019
+name: Build protobuf cpp with mingw64 and msvc2019
 
 on:
   push:
     branches: [main]
     paths:
-      - '.github/workflows/build-protobuf-lite.yml'
+      - '.github/workflows/build-protobuf-v2112.yml'
       - 'protobuf-options.txt'
       - 'mingw-gcc.txt'
       - 'cl_version'
@@ -39,7 +39,7 @@ jobs:
         export WSP_ROOT=$PWD
         export USER_MINGW_DIR=$WSP_ROOT/deps/mingw64
         tar -xf protobuf-cpp-3.${{ env.PROTOBUF_VERSION }}.tar.gz
-        rm -f protobuf-${{ env.PROTOBUF_VERSION }}.tar.gz
+        # rm -f protobuf-cpp-3.${{ env.PROTOBUF_VERSION }}.tar.gz
         mkdir build
         echo ~~~~~~~~~~~~ mingw32 build prepare ~~~~~~~~~~~~
         7z x mingw-w64_gcc-i686-all.7z -r -o$USER_MINGW_DIR
@@ -154,13 +154,13 @@ jobs:
     - uses: andreaswilli/delete-release-assets-action@v4.0.0
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
-        tag: protobuf-3.${{ env.PROTOBUF_VERSION }}
+        tag: protobuf-v${{ env.PROTOBUF_VERSION }}
         deleteOnlyFromDrafts: false
 
     - name: Upload Protocol Buffers ${{ env.PROTOBUF_VERSION }}
       uses: softprops/action-gh-release@v3
       with:
-        tag_name: protobuf-3.${{ env.PROTOBUF_VERSION }}
+        tag_name: protobuf-v${{ env.PROTOBUF_VERSION }}
         name: Latest build of Protocol Buffers cpp-3.${{ env.PROTOBUF_VERSION }}
         body: |
           date: ${{ steps.vars.outputs.update_date }}
@@ -171,3 +171,4 @@ jobs:
         make_latest: true
         files: |
           ./protobuf-cpp-3.${{ env.PROTOBUF_VERSION }}-*.7z
+          ./protobuf-cpp-3.${{ env.PROTOBUF_VERSION }}.tar.gz
