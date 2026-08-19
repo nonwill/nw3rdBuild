@@ -1,0 +1,262 @@
+name: Build onnxruntime for macOS universal
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/build-onnxruntime.yml'
+      - 'ort_macos_build.sh'
+
+env:
+  ONNXRUNTIME_VERSION: "1.28.1"
+
+jobs:
+  macos-shared:
+    if: true
+    name: ${{ matrix.os }} ${{ matrix.arch }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-latest
+            arch: arm64
+          - os: macos-15-intel
+            arch: universal
+
+    steps:
+      - name: Cache build result for ${{ env.ONNXRUNTIME_VERSION }}
+        id: cache-build-result
+        uses: actions/cache@v4
+        with:
+          path: onnxruntime-osx-${{ matrix.arch }}-${{ env.ONNXRUNTIME_VERSION }}
+          key: onnxruntime-osx-${{ matrix.arch }}-${{ env.ONNXRUNTIME_VERSION }}-cache-v1
+
+      - name: ccache
+        uses: hendrikmuhs/ccache-action@v1.2
+        with:
+          key: ${{ matrix.os }}-${{ matrix.arch }}
+
+      - name: Checkout v${{ env.ONNXRUNTIME_VERSION }}
+        if: steps.cache-build-result.outputs.cache-hit != 'true'
+        uses: actions/checkout@v7
+        with:
+          repository: microsoft/onnxruntime
+          submodules: true
+          ref: v${{ env.ONNXRUNTIME_VERSION }}
+
+      - name: Install dependencies on macos
+        if: steps.cache-build-result.outputs.cache-hit != 'true'
+        shell: bash
+        run: |
+          brew install ninja 7zip
+          cmake --version
+          brew install tree
+          tree --version
+
+      - name: Build onnxruntime ${{ env.ONNXRUNTIME_VERSION }} for macOS ${{ matrix.arch }}
+        if: steps.cache-build-result.outputs.cache-hit != 'true'
+        shell: bash
+        run: |
+          export CMAKE_CXX_COMPILER_LAUNCHER=ccache
+          export PATH="/usr/lib/ccache:/usr/local/opt/ccache/libexec:$PATH"
+          curl -L https://raw.githubusercontent.com/nonwill/nw3rdBuild/refs/heads/main/ort_macos_build.sh -o ort_macos_build.sh
+
+          sed -i.bak '/SOVERSION/d' ./cmake/onnxruntime.cmake
+          git diff
+
+          build_dir=./build-macos/${{ matrix.arch }}
+
+          version=${{ env.ONNXRUNTIME_VERSION }}
+          config=${{ matrix.config }}
+          matrixarch=${{ matrix.arch }}
+
+          arch="arm64"
+          extra_opt="--no_kleidiai"
+          # sed -i.bak s/\"arm64e\",/\"x86_64\;arm64\",/g ./tools/ci_build/build.py
+          artifact=onnxruntime-osx-arm64-${{ env.ONNXRUNTIME_VERSION }}
+          source ./ort_macos_build.sh
+
+          arch=${{ matrix.arch }}
+          if [[ $arch == universal ]]; then
+            arch="x86_64"
+            extra_opt=""
+            artifact=onnxruntime-osx-x86_64-${{ env.ONNXRUNTIME_VERSION }}
+            source ./ort_macos_build.sh
+          fi
+
+          pwd && ls -la onnxruntime-osx-*
+
+      - name: Collect results
+        if: steps.cache-build-result.outputs.cache-hit != 'true'
+        id: vars
+        shell: bash
+        run: |
+          echo "update_date=$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
+          arch=${{ matrix.arch }}
+
+          artifact1=onnxruntime-osx-arm64-${{ env.ONNXRUNTIME_VERSION }}
+          tree ./$artifact1
+          if [[ $arch == arm64 ]]; then
+            zip -r ${artifact1}.zip ./$artifact1
+          fi
+
+          if [[ $arch == universal ]]; then
+            artifact2=onnxruntime-osx-x86_64-${{ env.ONNXRUNTIME_VERSION }}
+            tree ./$artifact2
+            zip -r ${artifact2}.zip ./$artifact2
+
+            WSP_ROOT=$PWD
+
+            artifact=onnxruntime-osx-${{ matrix.arch }}-${{ env.ONNXRUNTIME_VERSION }}
+            mkdir -p $WSP_ROOT/$artifact/lib
+
+            cp -R $WSP_ROOT/$artifact2/include $WSP_ROOT/$artifact
+            cp -v $WSP_ROOT/$artifact2/README.md $WSP_ROOT/$artifact/README.md
+            cp -v $WSP_ROOT/$artifact2/Privacy.md $WSP_ROOT/$artifact/Privacy.md
+            cp -v $WSP_ROOT/$artifact2/LICENSE $WSP_ROOT/$artifact/LICENSE
+            cp -v $WSP_ROOT/$artifact2/ThirdPartyNotices.txt $WSP_ROOT/$artifact/ThirdPartyNotices.txt
+            cp -v $WSP_ROOT/$artifact2/VERSION_NUMBER $WSP_ROOT/$artifact/VERSION_NUMBER
+
+            version=${{ env.ONNXRUNTIME_VERSION }}
+
+            lipo \
+                $WSP_ROOT/$artifact2/lib/libonnxruntime.$version.dylib \
+                $WSP_ROOT/$artifact1/lib/libonnxruntime.$version.dylib \
+                -create -output $WSP_ROOT/$artifact/lib/libonnxruntime.$version.dylib
+
+            tree ./$artifact
+            zip -r ${artifact}.zip ./$artifact
+
+            rm -rf $WSP_ROOT/$artifact1
+            rm -rf $WSP_ROOT/$artifact2
+          fi
+
+          pwd && ls -la
+
+      - name: Upload artifact
+        if: steps.cache-build-result.outputs.cache-hit != 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: onnxruntime-osx-${{ matrix.arch }}-${{ env.ONNXRUNTIME_VERSION }}
+          path: onnxruntime-osx-${{ matrix.arch }}-${{ env.ONNXRUNTIME_VERSION }}
+
+      - name: Upload v${{ env.ONNXRUNTIME_VERSION }}
+        if: steps.cache-build-result.outputs.cache-hit != 'true'
+        uses: svenstaro/upload-release-action@v2
+        with:
+          file_glob: true
+          file: "./*.zip"
+          overwrite: true
+          tag: onnxruntime-${{ env.ONNXRUNTIME_VERSION }}
+          release_name: onnxruntime-osx-${{ env.ONNXRUNTIME_VERSION }}
+          body: |
+            date: ${{ steps.vars.outputs.update_date }}
+
+  windows_x64:
+    if: true
+    name: Build ${{ matrix.target }} Release
+    runs-on: windows-2022
+    strategy:
+      fail-fast: false
+      matrix:
+        target: ["x64", "x86"]
+
+    steps:
+      - name: Cache build result for ${{ env.ONNXRUNTIME_VERSION }} ${{ matrix.target }}
+        id: cache-build-result
+        uses: actions/cache@v4
+        with:
+          path: onnxruntime-win-${{ matrix.target }}-${{ env.ONNXRUNTIME_VERSION }}
+          key: onnxruntime-win-${{ matrix.target }}-${{ env.ONNXRUNTIME_VERSION }}-cache-v1
+
+      - name: Checkout v${{ env.ONNXRUNTIME_VERSION }}
+        if: steps.cache-build-result.outputs.cache-hit != 'true'
+        uses: actions/checkout@v4
+        with:
+          repository: microsoft/onnxruntime
+          submodules: true
+          ref: v${{ env.ONNXRUNTIME_VERSION }}
+
+      - name: Install dependencies on Windows
+        if: steps.cache-build-result.outputs.cache-hit != 'true'
+        shell: bash
+        run: |
+          python3 -m pip install cmake
+          python3 -m pip install flatbuffers
+          python3 -m pip install ninja
+          python3 -m pip install -r "${{ github.workspace }}\tools\ci_build\github\windows\python\requirements.txt"
+          cmake --version
+          cmake --help
+
+      - name: Setup msvc2019 x64 Environment
+        if: steps.cache-build-result.outputs.cache-hit != 'true' && matrix.target == 'x64'
+        uses: TheMrMilchmann/setup-msvc-dev@v4
+        with:
+          arch: x64
+          toolset: 14.29
+
+      - name: Setup msvc2019 x86 Environment
+        if: steps.cache-build-result.outputs.cache-hit != 'true' && matrix.target == 'x86'
+        uses: TheMrMilchmann/setup-msvc-dev@v4
+        with:
+          arch: x86
+          toolset: 14.29
+
+      - name: Build onnxruntime ${{ env.ONNXRUNTIME_VERSION }} for ${{ matrix.target }}
+        if: steps.cache-build-result.outputs.cache-hit != 'true'
+        id: vars
+        shell: bash
+        run: |
+          cl.exe
+
+          build_dir=./build/windows_${{ matrix.target }}
+          arch=${{ matrix.target }}
+          extra_opt=""
+          if [[ $arch == x86 ]]; then
+            extra_opt="--x86"
+          fi
+
+          dst_dir=onnxruntime-win-${{ matrix.target }}-${{ env.ONNXRUNTIME_VERSION }}
+          WSP_ROOT=$PWD
+
+          python3 ./tools/ci_build/build.py \
+            --compile_no_warning_as_error \
+            --build_dir $build_dir \
+            --config Release \
+            --parallel \
+            $extra_opt \
+            --cmake_generator "Ninja" \
+            --cmake_extra_defines onnxruntime_BUILD_UNIT_TESTS=OFF \
+            --cmake_extra_defines CMAKE_INSTALL_PREFIX=$WSP_ROOT/$dst_dir \
+            --skip_tests \
+            --build_shared_lib \
+            --disable_memleak_checker \
+            --update \
+            --build --target install
+
+          zip -r ${dst_dir}.zip $dst_dir
+          ls -lh
+
+          echo "update_date=$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
+          echo "cl_exe_info=$(cl > cl_version 2>&1 && head -n 1 cl_version)" >> $GITHUB_OUTPUT
+
+      - name: Upload artifact
+        if: steps.cache-build-result.outputs.cache-hit != 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: onnxruntime-win-${{ matrix.target }}-${{ env.ONNXRUNTIME_VERSION }}
+          path: onnxruntime-win-${{ matrix.target }}-${{ env.ONNXRUNTIME_VERSION }}
+
+      - name: Upload v${{ env.ONNXRUNTIME_VERSION }}
+        if: steps.cache-build-result.outputs.cache-hit != 'true'
+        uses: svenstaro/upload-release-action@v2
+        with:
+          file_glob: true
+          file: "./*.zip"
+          overwrite: true
+          tag: onnxruntime-${{ env.ONNXRUNTIME_VERSION }}
+          release_name: onnxruntime-${{ env.ONNXRUNTIME_VERSION }}
+          body: |
+            date: ${{ steps.vars.outputs.update_date }}
+            cl: ${{ steps.vars.outputs.cl_exe_info }}
