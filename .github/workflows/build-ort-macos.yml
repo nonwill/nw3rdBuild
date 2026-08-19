@@ -1,13 +1,14 @@
-name: macos-shared
+name: Build onnxruntime for macOS universal
 
 on:
   push:
     branches: [main]
     paths:
       - '.github/workflows/build-ort-macos.yml'
+      - 'ort_macos_build.sh'
 
 env:
-  ONNXRUNTIME_VERSION: "1.24.4"
+  ONNXRUNTIME_VERSION: "1.28.1"
 
 jobs:
   macos-shared:
@@ -68,9 +69,24 @@ jobs:
           build_dir=./build-macos/${{ matrix.arch }}
           arch=${{ matrix.arch }}
           if [[ $arch == universal2 ]]; then
-            arch="x86_64;arm64"
+            curl -L https://raw.githubusercontent.com/nonwill/nw3rdBuild/refs/heads/main/ort_macos_build.sh -o ort_macos_build.sh
+
+            version=${{ env.ONNXRUNTIME_VERSION }}
+            config=${{ matrix.config }}
+            matrixarch=${{ matrix.arch }}
+
+            arch="arm64"
             extra_opt="--no_kleidiai"
             # sed -i.bak s/\"arm64e\",/\"x86_64\;arm64\",/g ./tools/ci_build/build.py
+            artifact=onnxruntime-universal-arm64-${{ env.ONNXRUNTIME_VERSION }}
+            source ./ort_macos_build.sh
+
+            arch="x86_64"
+            extra_opt=""
+            artifact=onnxruntime-universal-x86_64-${{ env.ONNXRUNTIME_VERSION }}
+            source ./ort_macos_build.sh
+
+            exit 0
           fi
 
           sed -i.bak '/SOVERSION/d' ./cmake/onnxruntime.cmake
@@ -107,6 +123,44 @@ jobs:
         shell: bash
         run: |
           echo "update_date=$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
+          if [[ $arch == universal2 ]]; then
+            artifact1=onnxruntime-universal-x86_64-${{ env.ONNXRUNTIME_VERSION }}
+            tree ./$artifact1
+            #zip -r ${artifact1}.zip ./$artifact1
+            artifact2=onnxruntime-universal-arm64-${{ env.ONNXRUNTIME_VERSION }}
+            tree ./$artifact2
+            #zip -r ${artifact2}.zip ./$artifact2
+
+            #pwd && ls -la
+
+            export WSP_ROOT=$PWD
+            version=${{ env.ONNXRUNTIME_VERSION }}
+            config=${{ matrix.config }}
+            artifact=onnxruntime-osx-${{ matrix.arch }}-$version
+            mkdir -p $WSP_ROOT/$artifact/lib
+
+            cp -R $WSP_ROOT/$artifact2/include $WSP_ROOT/$artifact
+            cp -v $WSP_ROOT/$artifact2/README.md $WSP_ROOT/$artifact/README.md
+            cp -v $WSP_ROOT/$artifact2/Privacy.md $WSP_ROOT/$artifact/Privacy.md
+            cp -v $WSP_ROOT/$artifact2/LICENSE $WSP_ROOT/$artifact/LICENSE
+            cp -v $WSP_ROOT/$artifact2/ThirdPartyNotices.txt $WSP_ROOT/$artifact/ThirdPartyNotices.txt
+            cp -v $WSP_ROOT/$artifact2/VERSION_NUMBER $WSP_ROOT/$artifact/VERSION_NUMBER
+
+            lipo \
+                $WSP_ROOT/$artifact1/lib/libonnxruntime.$version.dylib \
+                $WSP_ROOT/$artifact2/lib/libonnxruntime.$version.dylib \
+                -create -output $WSP_ROOT/$artifact/lib/libonnxruntime.dylib
+
+            tree ./$artifact
+            zip -r ${artifact}.zip ./$artifact
+
+            rm -rf $WSP_ROOT/$artifact1
+            rm -rf $WSP_ROOT/$artifact2
+
+            pwd && ls -la
+
+            exit 0
+          fi
 
           build_dir=./build-macos/${{ matrix.arch }}
 
@@ -184,7 +238,6 @@ jobs:
           fi
 
           which tree
-
           tree ./$artifact
 
           zip -r ${artifact}.zip ./$artifact
