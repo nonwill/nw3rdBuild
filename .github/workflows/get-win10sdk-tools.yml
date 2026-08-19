@@ -11,8 +11,9 @@ jobs:
         runs-on: windows-2022
         steps:
                 - uses: actions/checkout@v7
-                - uses: ilammy/msvc-dev-cmd@v1
-                  with: 
+                - uses: TheMrMilchmann/setup-msvc-dev@v4
+                  with:
+                        arch: x64
                         toolset: 14.29
 
                 - name: Get version information
