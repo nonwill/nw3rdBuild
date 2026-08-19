@@ -93,12 +93,14 @@ jobs:
         shell: bash
         run: |
           echo "update_date=$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
+          arch=${{ matrix.arch }}
 
           artifact1=onnxruntime-osx-arm64-${{ env.ONNXRUNTIME_VERSION }}
           tree ./$artifact1
-          zip -r ${artifact1}.zip ./$artifact1
+          if [[ $arch == arm64 ]]; then
+            zip -r ${artifact1}.zip ./$artifact1
+          fi
 
-          arch=${{ matrix.arch }}
           if [[ $arch == universal ]]; then
             artifact2=onnxruntime-osx-x86_64-${{ env.ONNXRUNTIME_VERSION }}
             tree ./$artifact2
