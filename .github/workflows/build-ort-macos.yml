@@ -123,19 +123,19 @@ jobs:
         shell: bash
         run: |
           echo "update_date=$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
+          arch=${{ matrix.arch }}
           if [[ $arch == universal2 ]]; then
             artifact1=onnxruntime-universal-x86_64-${{ env.ONNXRUNTIME_VERSION }}
             tree ./$artifact1
-            #zip -r ${artifact1}.zip ./$artifact1
+            # zip -r ${artifact1}.zip ./$artifact1
             artifact2=onnxruntime-universal-arm64-${{ env.ONNXRUNTIME_VERSION }}
             tree ./$artifact2
-            #zip -r ${artifact2}.zip ./$artifact2
+            # zip -r ${artifact2}.zip ./$artifact2
 
-            #pwd && ls -la
-
-            export WSP_ROOT=$PWD
+            WSP_ROOT=$PWD
             version=${{ env.ONNXRUNTIME_VERSION }}
             config=${{ matrix.config }}
+
             artifact=onnxruntime-osx-${{ matrix.arch }}-$version
             mkdir -p $WSP_ROOT/$artifact/lib
 
