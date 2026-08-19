@@ -1,4 +1,4 @@
-name: macos-shared
+name: Build onnxruntime for macOS universal
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
       - '.github/workflows/build-ort-macos.yml'
 
 env:
-  ONNXRUNTIME_VERSION: "1.24.4"
+  ONNXRUNTIME_VERSION: "1.28.1"
 
 jobs:
   macos-shared:
@@ -184,7 +184,6 @@ jobs:
           fi
 
           which tree
-
           tree ./$artifact
 
           zip -r ${artifact}.zip ./$artifact
