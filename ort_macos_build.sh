@@ -1,6 +1,6 @@
 #/bin/sh
 python3 ./tools/ci_build/build.py \
-            --build_dir $build_dir \
+            --build_dir $build_dir --no_telemetry \
             --config Release \
             --cmake_generator 'Ninja' \
             --update \

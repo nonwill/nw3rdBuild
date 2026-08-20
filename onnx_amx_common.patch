@@ -1,0 +1,33 @@
+diff -aurN onnxruntime1/core/mlas/lib/amx_common.h onnxruntime2/core/mlas/lib/amx_common.h
+--- onnxruntime1/core/mlas/lib/amx_common.h	2026-08-20 03:04:21.919277000 +0800
++++ onnxruntime2/core/mlas/lib/amx_common.h	2026-08-20 03:07:40.376841000 +0800
+@@ -19,6 +19,29 @@
+ #include "mlasi.h"
+ 
+ #ifdef _WIN32
++
++#if !defined (_M_X64)
++
++// AMX
++typedef int __tile;
++
++extern void __cdecl _tile_loadconfig(const void *);
++extern void __cdecl _tile_storeconfig(void *);
++extern void __cdecl _tile_release(void);
++
++extern void __cdecl _tile_loadd(__tile dst, const void *base, int stride);
++extern void __cdecl _tile_stream_loadd(__tile dst, const void *base, int stride);
++extern void __cdecl _tile_stored(__tile src, void *base, int stride);
++extern void __cdecl _tile_zero(__tile dst);
++
++extern void __cdecl _tile_dpbf16ps(__tile dst, __tile src1, __tile src2);
++extern void __cdecl _tile_dpbssd(__tile dst, __tile src1, __tile src2);
++extern void __cdecl _tile_dpbsud(__tile dst, __tile src1, __tile src2);
++extern void __cdecl _tile_dpbusd(__tile dst, __tile src1, __tile src2);
++extern void __cdecl _tile_dpbuud(__tile dst, __tile src1, __tile src2);
++
++#endif  /* defined (_M_X64) */
++
+ #define tile_dpbssd(dst, src1, src2) _tile_dpbssd(dst, src1, src2)
+ 
+ #define tile_dpbsud(dst, src1, src2) _tile_dpbsud(dst, src1, src2)

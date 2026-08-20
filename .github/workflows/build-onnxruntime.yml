@@ -8,7 +8,7 @@ on:
       - 'ort_macos_build.sh'
 
 env:
-  ONNXRUNTIME_VERSION: "1.28.1"
+  ONNXRUNTIME_VERSION: "1.29.0"
 
 jobs:
   macos-shared:
@@ -149,7 +149,7 @@ jobs:
           file: "./*.zip"
           overwrite: true
           tag: onnxruntime-${{ env.ONNXRUNTIME_VERSION }}
-          release_name: onnxruntime-osx-${{ env.ONNXRUNTIME_VERSION }}
+          release_name: onnxruntime-${{ env.ONNXRUNTIME_VERSION }}
           body: |
             date: ${{ steps.vars.outputs.update_date }}
 
@@ -178,16 +178,12 @@ jobs:
           submodules: true
           ref: v${{ env.ONNXRUNTIME_VERSION }}
 
-      - name: Install dependencies on Windows
-        if: steps.cache-build-result.outputs.cache-hit != 'true'
-        shell: bash
-        run: |
-          python3 -m pip install cmake
-          python3 -m pip install flatbuffers
-          python3 -m pip install ninja
-          python3 -m pip install -r "${{ github.workspace }}\tools\ci_build\github\windows\python\requirements.txt"
-          cmake --version
-          cmake --help
+      - name: Setup Python
+        if: false && steps.cache-build-result.outputs.cache-hit != 'true' && matrix.target == 'x86'
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.14'
+          architecture: x86 # x86 Python
 
       - name: Setup msvc2019 x64 Environment
         if: steps.cache-build-result.outputs.cache-hit != 'true' && matrix.target == 'x64'
@@ -203,18 +199,35 @@ jobs:
           arch: x86
           toolset: 14.29
 
+      - name: Install python modules
+        if: steps.cache-build-result.outputs.cache-hit != 'true'
+        shell: cmd
+        run: python -m pip install -r "${{ github.workspace }}\tools\ci_build\github\windows\python\requirements.txt"
+
+      - name: Install dependencies on Windows
+        if: steps.cache-build-result.outputs.cache-hit != 'true'
+        shell: bash
+        run: |
+          python3 -m pip install cmake
+          python3 -m pip install ninja
+          cmake --version
+
       - name: Build onnxruntime ${{ env.ONNXRUNTIME_VERSION }} for ${{ matrix.target }}
         if: steps.cache-build-result.outputs.cache-hit != 'true'
         id: vars
         shell: bash
         run: |
-          cl.exe
+          where cl.exe && cl.exe
 
           build_dir=./build/windows_${{ matrix.target }}
           arch=${{ matrix.target }}
+
           extra_opt=""
+
           if [[ $arch == x86 ]]; then
-            extra_opt="--x86"
+            curl -L https://raw.githubusercontent.com/nonwill/nw3rdBuild/refs/heads/main/onnx_amx_common.patch -o onnx_amx_common.patch
+            cat ./onnx_amx_common.patch | patch -Z -d ./onnxruntime -p1 --verbose || exit 1
+            extra_opt="--x86 --cmake_extra_defines CMAKE_VS_PLATFORM_NAME=x86"
           fi
 
           dst_dir=onnxruntime-win-${{ matrix.target }}-${{ env.ONNXRUNTIME_VERSION }}
@@ -222,7 +235,7 @@ jobs:
 
           python3 ./tools/ci_build/build.py \
             --compile_no_warning_as_error \
-            --build_dir $build_dir \
+            --build_dir $build_dir --no_telemetry \
             --config Release \
             --parallel \
             $extra_opt \
@@ -235,7 +248,9 @@ jobs:
             --update \
             --build --target install
 
-          zip -r ${dst_dir}.zip $dst_dir
+          cd $dst_dir
+          7z -mx5 a ../${dst_dir}.7z *
+          cd ..
           ls -lh
 
           echo "update_date=$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
@@ -253,7 +268,7 @@ jobs:
         uses: svenstaro/upload-release-action@v2
         with:
           file_glob: true
-          file: "./*.zip"
+          file: "./*.7z"
           overwrite: true
           tag: onnxruntime-${{ env.ONNXRUNTIME_VERSION }}
           release_name: onnxruntime-${{ env.ONNXRUNTIME_VERSION }}
