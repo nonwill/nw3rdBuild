@@ -14,14 +14,43 @@ env:
 
 jobs:
   build_with_mingw-gcc15:
+    if: true
+    name: Build ${{ matrix.plat }}-${{ matrix.arch }} Release
     runs-on: windows-2022
-    defaults:
-      run:
-        shell: msys2 {0}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: 'x64'
+            plat: 'mingw64'
+            msystem: 'MINGW64'
+            mpathtype: 'minimal'
+          - arch: 'x86'
+            plat: 'mingw64'
+            msystem: 'MINGW32'
+            mpathtype: 'minimal'
+          - arch: 'x64'
+            plat: 'msvc2019'
+            msystem: 'MINGW64'
+            mpathtype: 'inherit'
+          - arch: 'x86'
+            plat: 'msvc2019'
+            msystem: 'MINGW32'
+            mpathtype: 'inherit'
     steps:
+    - name: Cache build result for ${{ env.ICU4C_VERSION }}-${{ matrix.plat }}-${{ matrix.arch }}
+      id: cache-build-result
+      uses: actions/cache@v4
+      with:
+        path: icu4c-${{ env.ICU4C_VERSION }}-${{ matrix.plat }}-${{ matrix.arch }}
+        key: icu4c-${{ env.ICU4C_VERSION }}-${{ matrix.plat }}-${{ matrix.arch }}-cache-v2
+
     - name: Install msys2
+      if: steps.cache-build-result.outputs.cache-hit != 'true'
       uses: msys2/setup-msys2@v2
       with:
+        msystem: ${{ matrix.msystem }}
+        path-type: ${{ matrix.mpathtype }}
         update: true
         install: >-
             make
@@ -36,103 +65,150 @@ jobs:
             perl
             curl
             git
+            tree
 
-    - uses: actions/checkout@v7
-
-    - name: Install or Download Dependencies
+    - name: Download sources and Install Dependencies
+      if: steps.cache-build-result.outputs.cache-hit != 'true'
+      shell: msys2 {0}
       run: |
         perl --version
-        mkdir deps
-        cd deps && mkdir mingw64 && cd ..
         curl -L https://github.com/unicode-org/icu/releases/download/release-${{ env.ICU4C_VERSION }}/icu4c-${{ env.ICU4C_VERSION }}-sources.tgz -o icu4c-${{ env.ICU4C_VERSION }}.tgz
-        curl -L https://github.com/nonwill/mingw-distro/releases/download/mingw64-gcc15-crt_latest/mingw-w64+gcc-i686-all.7z -o mingw-w64_gcc-i686-all.7z
-        curl -L https://github.com/nonwill/mingw-distro/releases/download/mingw64-gcc15-crt_latest/mingw-w64+gcc-x86_64-all.7z -o mingw-w64_gcc-x86_64-all.7z
         ls -la
 
-    - name: MinGW Build icu4c-${{ env.ICU4C_VERSION }}
-      run: |
-        export WSP_ROOT=$PWD
-        export USER_MINGW_DIR=$WSP_ROOT/deps/mingw64
-        echo ~~~~~~~~~~~~ mingw32 build prepare ~~~~~~~~~~~~
-        7z x mingw-w64_gcc-i686-all.7z -r -o$USER_MINGW_DIR
-        rm -f mingw-w64_gcc-i686-all.7z
-        export PATH=$USER_MINGW_DIR/bin:$PATH
-        gcc -v
-        echo ~~~~~~~~~~~~ mingw32 build begin ~~~~~~~~~~~~
-        tar -xf icu4c-${{ env.ICU4C_VERSION }}.tgz
-        cd icu/source
-        ./runConfigureICU  MinGW  --prefix=$WSP_ROOT/icu4c-${{ env.ICU4C_VERSION }}-mingw64 \
-            CXXFLAGS=-std=gnu++17 && make -j 4 && make install
-        cd ../..
-        strip $WSP_ROOT/icu4c-${{ env.ICU4C_VERSION }}-mingw64/bin/*.dll
-        strip $WSP_ROOT/icu4c-${{ env.ICU4C_VERSION }}-mingw64/bin/*.exe
-        cd $WSP_ROOT/icu4c-${{ env.ICU4C_VERSION }}-mingw64
-        7z -mx5 a ../icu4c-${{ env.ICU4C_VERSION }}-mingw64-i686.7z *
-        cd ..
-        echo ~~~~~~~~~~~~ mingw32 build end ~~~~~~~~~~~~
-        rm -rf icu
-        rm -rf $WSP_ROOT/icu4c-${{ env.ICU4C_VERSION }}-mingw64
-        rm -rf $USER_MINGW_DIR/*
-        echo ~~~~~~~~~~~~ mingw64 build prepare ~~~~~~~~~~~~
-        7z x mingw-w64_gcc-x86_64-all.7z -r -o$USER_MINGW_DIR
-        rm -f mingw-w64_gcc-x86_64-all.7z
-        gcc -v
-        echo ~~~~~~~~~~~~ mingw64 build begin ~~~~~~~~~~~~
-        tar -xf icu4c-${{ env.ICU4C_VERSION }}.tgz
-        cd icu/source
-        ./runConfigureICU  MinGW  --prefix=$WSP_ROOT/icu4c-${{ env.ICU4C_VERSION }}-mingw64 \
-            CXXFLAGS=-std=gnu++17 && make -j 4 && make install
-        cd ../..
-        strip $WSP_ROOT/icu4c-${{ env.ICU4C_VERSION }}-mingw64/bin/*.dll
-        strip $WSP_ROOT/icu4c-${{ env.ICU4C_VERSION }}-mingw64/bin/*.exe
-        cd $WSP_ROOT/icu4c-${{ env.ICU4C_VERSION }}-mingw64
-        7z -mx5 a ../icu4c-${{ env.ICU4C_VERSION }}-mingw64-x86_64.7z *
-        cd ..
-        echo ~~~~~~~~~~~~ mingw64 build end ~~~~~~~~~~~~
-        rm -rf icu
-        rm -rf $WSP_ROOT/icu4c-${{ env.ICU4C_VERSION }}-mingw64
+        plat=${{ matrix.plat }}
+        arch=${{ matrix.arch }}
 
-    - uses: andreaswilli/delete-release-assets-action@v4.0.0
-      with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        tag: icu4c-${{ env.ICU4C_VERSION }}
-        deleteOnlyFromDrafts: false
+        if [[ $plat == mingw64 ]]; then
+          mkdir -p $PWD/deps/mingw64
+
+          if [[ $arch == x64 ]]; then
+            arch=x86_64
+          else
+            arch=i686
+          fi
+
+          curl -L https://github.com/nonwill/mingw-distro/releases/download/mingw64-gcc15-crt_latest/mingw-w64+gcc-$arch-all.7z -o mingw-w64_gcc+$arch-all.7z
+          ls -la
+
+          7z x mingw-w64_gcc+$arch-all.7z -r -o$PWD/deps/mingw64
+
+          ls $PWD/deps/mingw64
+          $PWD/deps/mingw64/bin/gcc -v
+        fi
+
+        tar -xf icu4c-${{ env.ICU4C_VERSION }}.tgz
 
     - name: Setup msvc2019 x64 Environment
+      if: steps.cache-build-result.outputs.cache-hit != 'true' && matrix.plat == 'msvc2019' && matrix.arch == 'x64'
+      uses: TheMrMilchmann/setup-msvc-dev@v4
+      with:
+        arch: x64
+        toolset: 14.29
+
+    - name: Setup msvc2019 x86 Environment
+      if: steps.cache-build-result.outputs.cache-hit != 'true' && matrix.plat == 'msvc2019' && matrix.arch == 'x86'
+      uses: TheMrMilchmann/setup-msvc-dev@v4
+      with:
+        arch: x86
+        toolset: 14.29
+
+    - name: MinGW Build icu4c-${{ env.ICU4C_VERSION }}
+      if: steps.cache-build-result.outputs.cache-hit != 'true' && matrix.plat == 'mingw64'
+      shell: msys2 {0}
+      run: |
+        export PATH=$PWD/deps/mingw64/bin:$PATH
+        export CPP=$PWD/deps/mingw64/bin/cpp.exe
+        export CC=$PWD/deps/mingw64/bin/gcc.exe
+        export CXX=$PWD/deps/mingw64/bin/g++.exe
+        export AR=$PWD/deps/mingw64/bin/ar.exe
+        export AS=$PWD/deps/mingw64/bin/as.exe
+        export LD=$PWD/deps/mingw64/bin/ld.exe
+        gcc -v
+        artifact=icu4c-${{ env.ICU4C_VERSION }}-${{ matrix.plat }}-${{ matrix.arch }}
+        dst_dir=$PWD/$artifact
+        echo ~~~~~~~~~~~~ ${{ matrix.plat }}-${{ matrix.arch }} build begin ~~~~~~~~~~~~
+        cd icu/source
+        ./runConfigureICU MinGW --prefix=$dst_dir \
+            CXXFLAGS=-std=gnu++17 && make -j 4 && make install && cd ../..
+
+        tree ./$artifact
+        cd $artifact
+        strip ./bin/*.dll
+        strip ./bin/*.exe
+        7z -mx5 a ../${artifact}.7z *
+        echo ~~~~~~~~~~~~ ${{ matrix.plat }}-${{ matrix.arch }} build end ~~~~~~~~~~~~
+
+    - name: MSVC Build icu4c-${{ env.ICU4C_VERSION }}
+      if: steps.cache-build-result.outputs.cache-hit != 'true' && matrix.plat == 'msvc2019'
+      shell: msys2 {0}
+      run: |
+        mv /usr/bin/link /usr/bin/link1
+        cl.exe
+        artifact=icu4c-${{ env.ICU4C_VERSION }}-${{ matrix.plat }}-${{ matrix.arch }}
+        dst_dir=$PWD/$artifact
+        echo ~~~~~~~~~~~~ ${{ matrix.plat }}-${{ matrix.arch }} build begin ~~~~~~~~~~~~
+        cd icu/source
+        cd config && mv mh-unknown mh-unknown.raw && cp -v mh-msys-msvc mh-unknown && cd ..
+        ./runConfigureICU MSYS/MSVC --prefix=$dst_dir \
+            CXXFLAGS=/std:c++17 LDFLAGS=/DEFAULTLIB:msvcrt.lib && make -j 4 && make install && cd ../..
+
+        tree ./$artifact
+        cd $artifact
+        7z -mx5 a ../${artifact}.7z *
+        echo ~~~~~~~~~~~~ ${{ matrix.plat }}-${{ matrix.arch }} build end ~~~~~~~~~~~~
+
+    - name: Setup msvc2019 x64 Environment
+      if: steps.cache-build-result.outputs.cache-hit != 'true' && matrix.plat == 'mingw64' && matrix.arch == 'x64'
       uses: TheMrMilchmann/setup-msvc-dev@v4
       with:
         arch: x64
         toolset: 14.29
 
     - name: Get date and Cl version
+      if: steps.cache-build-result.outputs.cache-hit != 'true' && matrix.plat == 'mingw64' && matrix.arch == 'x64'
       id: vars
       shell: bash
       run: |
-        export WSP_ROOT=$PWD
-        export USER_MINGW_DIR=$WSP_ROOT/deps/mingw64
-        export PATH=$USER_MINGW_DIR/bin:$PATH
+        export PATH=$PWD/deps/mingw64/bin:$PATH
         echo "update_date=$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
         echo "vc_install_dir=$VCToolsInstallDir" >> $GITHUB_OUTPUT
         echo "cl_exe_info=$(cl > cl_version 2>&1 && head -n 1 cl_version)" >> $GITHUB_OUTPUT
         echo "gcc_exe_info=$(gcc --version > gcc_version 2>&1 && head -n 1 gcc_version)" >> $GITHUB_OUTPUT
-        rm -rf $USER_MINGW_DIR
+
+    - name: Upload artifact
+      if: steps.cache-build-result.outputs.cache-hit != 'true'
+      uses: actions/upload-artifact@v4
+      with:
+        name: icu4c-${{ env.ICU4C_VERSION }}-${{ matrix.plat }}-${{ matrix.arch }}
+        path: icu4c-${{ env.ICU4C_VERSION }}-${{ matrix.plat }}-${{ matrix.arch }}
 
     - name: Upload icu4c-${{ env.ICU4C_VERSION }}
-      uses: softprops/action-gh-release@v3
+      if: steps.cache-build-result.outputs.cache-hit != 'true'
+      uses: svenstaro/upload-release-action@v2
       with:
-        tag_name: icu4c-${{ env.ICU4C_VERSION }}
-        name: Latest build of icu4c-${{ env.ICU4C_VERSION }}
+        file_glob: true
+        file: ./icu4c-${{ env.ICU4C_VERSION }}-*.7z
+        overwrite: true
+        tag: icu4c-${{ env.ICU4C_VERSION }}
+        release_name: icu4c-${{ env.ICU4C_VERSION }}
+
+    - name: Upload icu4c-${{ env.ICU4C_VERSION }}.tgz
+      if: steps.cache-build-result.outputs.cache-hit != 'true' && matrix.plat == 'mingw64' && matrix.arch == 'x64'
+      uses: svenstaro/upload-release-action@v2
+      with:
+        file_glob: true
+        file: ./icu4c-${{ env.ICU4C_VERSION }}.tgz
+        overwrite: true
+        tag: icu4c-${{ env.ICU4C_VERSION }}
+        release_name: icu4c-${{ env.ICU4C_VERSION }}
         body: |
           date: ${{ steps.vars.outputs.update_date }}
           cl: ${{ steps.vars.outputs.cl_exe_info }}
           gcc: ${{ steps.vars.outputs.gcc_exe_info }}
-        draft: false
-        prerelease: false
-        files: |
-          ./icu4c-${{ env.ICU4C_VERSION }}-*.7z
 
   # Windows MSVC distribution release
   build_with_windows-msvc-2019:
+    if: false
     needs: build_with_mingw-gcc15
     runs-on: windows-2022
     strategy:
@@ -158,7 +234,9 @@ jobs:
         dir
 
     - name: Set up MSBuild
-      uses: microsoft/setup-msbuild@v2
+      uses: microsoft/setup-msbuild@v3
+      with:
+        vs-version: 16.11
 
     - name: Build Solution
       run: msbuild icu/source/allinone/allinone.sln /p:Configuration=Release /p:Platform=${{ matrix.plat }} /p:SkipUWP=true
@@ -182,7 +260,7 @@ jobs:
       uses: softprops/action-gh-release@v3
       with:
         tag_name: icu4c-${{ env.ICU4C_VERSION }}
-        name: Latest build of icu4c-${{ env.ICU4C_VERSION }}
+        name: icu4c-${{ env.ICU4C_VERSION }}
         draft: false
         prerelease: false
         make_latest: true
