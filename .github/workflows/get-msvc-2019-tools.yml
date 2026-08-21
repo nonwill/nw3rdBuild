@@ -93,7 +93,7 @@ jobs:
                   uses: softprops/action-gh-release@v3
                   with:
                         tag_name: msvc2019_latest
-                        name: Latest msvc-2019 build tools for Windows x86/x64
+                        name: msvc-2019 build tools for Windows x86/x64
                         body: |
                                 date: ${{ steps.vars.outputs.update_date }}
                                 from: ${{ steps.vars.outputs.vc_install_dir }}

@@ -79,25 +79,17 @@ jobs:
                         xcopy "%WindowsSdkDir%Lib/%winSdkVer%/ucrt_enclave/x64" x64 /Y /E /I /Q /H /C
                         cd .. && cd .. && cd ..
                         cd ..
-                        7z -mx5 a ./WindowsSdkDir.7z ./WindowsSdkDir
-
-                - name: Delete win10sdk_latest assets
-                  uses: andreaswilli/delete-release-assets-action@v4.0.0
-                  with:
-                        github_token: ${{ secrets.GITHUB_TOKEN }}
-                        tag: win10sdk_latest
-                        deleteOnlyFromDrafts: false
+                        7z -mx5 a ./WindowsSdkDir-%winSdkVer%.7z ./WindowsSdkDir
 
                 - name: Create Release and Upload Release Asset
-                  uses: softprops/action-gh-release@v3
+                  uses: svenstaro/upload-release-action@v2
                   with:
-                        tag_name: win10sdk_latest
-                        name: Latest Win10 SDK build tools for Windows x86/x64
+                        file_glob: true
+                        file: "./*.7z"
+                        overwrite: true
+                        tag: win10sdk_latest
+                        release_name: Win10 SDK build tools for Windows x86/x64
                         body: |
                                 date: ${{ steps.vars.outputs.update_date }}
                                 from: ${{ steps.vars.outputs.win10sdk_install_dir }}
                                 Version: ${{ steps.vars.outputs.win10sdk_version }}
-                        draft: false
-                        prerelease: false
-                        files: |
-                                ./*.7z
