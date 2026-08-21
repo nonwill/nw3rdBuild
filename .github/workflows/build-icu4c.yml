@@ -148,9 +148,11 @@ jobs:
         dst_dir=$PWD/$artifact
         echo ~~~~~~~~~~~~ ${{ matrix.plat }}-${{ matrix.arch }} build begin ~~~~~~~~~~~~
         cd icu/source
+
         cd config && mv mh-unknown mh-unknown.raw && cp -v mh-msys-msvc mh-unknown && cd ..
         ./runConfigureICU MSYS/MSVC --prefix=$dst_dir \
-            CXXFLAGS=/std:c++17 LDFLAGS=/DEFAULTLIB:msvcrt.lib && make -j 4 && make install && cd ../..
+            CXXFLAGS=/std:c++17 LDFLAGS=/DEFAULTLIB:msvcrt.lib && make -j 4 || mkdir -p data/out/tmp/dirs.timestamp
+        make -j 4 install && cd ../..
 
         tree ./$artifact
         cd $artifact
