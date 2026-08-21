@@ -13,171 +13,185 @@ env:
   OPENCV_VERSION: "4.14.0"
 
 jobs:
-  build_macos_intel:
-    runs-on: macos-15-intel
-    steps:
-    - uses: actions/checkout@v7
-    - name: Install or Download Dependencies
-      run: |
-        brew install curl unzip 7zip
-        curl -L https://github.com/opencv/opencv/archive/${{ env.OPENCV_VERSION }}.tar.gz -o opencv-${{ env.OPENCV_VERSION }}.tar.gz
-        cmake --version
-        ls -la
+  macos-shared:
+    if: true
+    name: ${{ matrix.os }} ${{ matrix.arch }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-latest
+            arch: arm64
+          - os: macos-15-intel
+            arch: universal
 
-    - name: Build OpenCV-${{ env.OPENCV_VERSION }}-x86_64
-      shell: bash
-      run: |
-        export WSP_ROOT=$PWD
-        tar -xf opencv-${{ env.OPENCV_VERSION }}.tar.gz
-        rm -f opencv-${{ env.OPENCV_VERSION }}.tar.gz
-        echo ~~~~~~~~~~~~ x86_64 build begin ~~~~~~~~~~~~
-        cflags="-arch x86_64 -isysroot macosx -Wno-unused-local-typedef -Wno-unused-function -DNDEBUG -g -O3 -pipe -fPIC -fcxx-exceptions"
-        export LDFLAGS="-arch x86_64 -stdlib=libc++"
-        export CFLAGS="$cflags"
-        export CXXFLAGS="$cflags"
-        which ar ranlib clang clang++
-        mkdir build-x86_64
-        cd build-x86_64
-        cmake ../opencv-${{ env.OPENCV_VERSION }} \
+    steps:
+      - name: Cache build result for ${{ env.OPENCV_VERSION }}
+        id: cache-build-result
+        uses: actions/cache@v4
+        with:
+          path: opencv-osx-${{ matrix.arch }}-${{ env.OPENCV_VERSION }}
+          key: opencv-osx-${{ matrix.arch }}-${{ env.OPENCV_VERSION }}-cache-v1
+
+      - name: Action Checkout
+        if: steps.cache-build-result.outputs.cache-hit != 'true'
+        uses: actions/checkout@v7
+
+      - name: Install or Download Dependencies
+        if: steps.cache-build-result.outputs.cache-hit != 'true'
+        run: |
+          brew install curl 7zip tree
+          arch=${{ matrix.arch }}
+          if [[ $arch == arm64 ]]; then
+            brew install cmake
+          fi
+          cmake --version
+
+          curl -L https://github.com/opencv/opencv/archive/${{ env.OPENCV_VERSION }}.tar.gz -o opencv-${{ env.OPENCV_VERSION }}.tar.gz
+          ls -la
+
+          tar -xf opencv-${{ env.OPENCV_VERSION }}.tar.gz
+          rm -f opencv-${{ env.OPENCV_VERSION }}.tar.gz
+
+      - name: Build OpenCV-${{ env.OPENCV_VERSION }}-${{ matrix.arch }}
+        if: steps.cache-build-result.outputs.cache-hit != 'true'
+        id: vars
+        shell: bash
+        run: |
+          which ar ranlib clang clang++
+
+          echo ~~~~~~~~~~~~ arm64 build begin ~~~~~~~~~~~~
+          arch="arm64"
+          artifact1=opencv-osx-$arch-${{ env.OPENCV_VERSION }}
+          dst_dir=$PWD/$artifact1
+
+          cflags="-arch $arch -isysroot macosx -Wno-unused-local-typedef -Wno-unused-function -DNDEBUG -g -O3 -pipe -fPIC -fcxx-exceptions"
+          export LDFLAGS="-arch $arch -stdlib=libc++"
+          export CFLAGS="$cflags"
+          export CXXFLAGS="$cflags"
+
+          mkdir build-$arch
+          cd build-$arch
+
+          cmake ../opencv-${{ env.OPENCV_VERSION }} \
             -G "Unix Makefiles" -DBUILD_LIST=core,imgcodecs -DBUILD_opencv_gapi=OFF -DWITH_AVIF=OFF \
-            -DCMAKE_INSTALL_PREFIX=$WSP_ROOT/opencv-${{ env.OPENCV_VERSION }}-macosx-x86_64 \
-            -DCMAKE_OSX_ARCHITECTURES="x86_64" -DCMAKE_OSX_SYSROOT=macosx \
+            -DCMAKE_INSTALL_PREFIX=$dst_dir \
+            -DCMAKE_OSX_ARCHITECTURES="$arch" -DCMAKE_OSX_SYSROOT=macosx \
             -DCMAKE_OSX_DEPLOYMENT_TARGET=10.10 \
-           `cat ../opencv-options.txt` \
+            `cat ../opencv-options.txt` \
             -DBUILD_opencv_world=ON && \
             make -j4 && make install
-        rm -rf ./*
-        cd ..
-        cd $WSP_ROOT/opencv-${{ env.OPENCV_VERSION }}-macosx-x86_64 && ls -la && cd lib && ls -la && cd ..
-        7z -mx5 a ../opencv-${{ env.OPENCV_VERSION }}-macOS-10.10-x86_64.7z *
-        cd ..
-        echo ~~~~~~~~~~~~ x86_64 build end ~~~~~~~~~~~~
 
-    - name: Upload opencv-${{ env.OPENCV_VERSION }}-x86_64
-      uses: softprops/action-gh-release@v3
-      with:
-        tag_name: opencv-${{ env.OPENCV_VERSION }}
-        name: Latest build of opencv-${{ env.OPENCV_VERSION }} for macOS
-        draft: false
-        prerelease: true
-        make_latest: false
-        files: |
-          ./opencv-${{ env.OPENCV_VERSION }}-*.7z
+          cd ..
+          rm -rf build-$arch
 
-  build_macos_arm64:
-    runs-on: macos-latest
-    steps:
-    - uses: actions/checkout@v7
+          tree $artifact1
 
-    - name: Install or Download Dependencies
-      run: |
-        brew install curl unzip 7zip
-        curl -L https://github.com/opencv/opencv/archive/${{ env.OPENCV_VERSION }}.tar.gz -o opencv-${{ env.OPENCV_VERSION }}.tar.gz
-        brew install cmake
-        cmake --version
-        ls -la
+          arch=${{ matrix.arch }}
+          if [[ $arch == arm64 ]]; then
+            cd $artifact1
+            7z -mx5 a ../${artifact1}.7z *
+            cd ..
+          fi
+          echo ~~~~~~~~~~~~ arm64 build end ~~~~~~~~~~~~
 
-    - name: Build OpenCV-${{ env.OPENCV_VERSION }}-arm64
-      shell: bash
-      run: |
-        export WSP_ROOT=$PWD
-        tar -xf opencv-${{ env.OPENCV_VERSION }}.tar.gz
-        rm -f opencv-${{ env.OPENCV_VERSION }}.tar.gz
-        echo ~~~~~~~~~~~~ arm64 build begin ~~~~~~~~~~~~
-        cflags="-arch arm64 -isysroot macosx -Wno-unused-local-typedef -Wno-unused-function -DNDEBUG -g -O3 -pipe -fPIC -fcxx-exceptions"
-        export LDFLAGS="-arch arm64 -stdlib=libc++"
-        export CFLAGS="$cflags"
-        export CXXFLAGS="$cflags"
-        which ar ranlib clang clang++
-        mkdir build-arm64
-        cd build-arm64
-        cmake ../opencv-${{ env.OPENCV_VERSION }} \
-            -G "Unix Makefiles" -DBUILD_LIST=core,imgcodecs -DBUILD_opencv_gapi=OFF -DWITH_AVIF=OFF \
-            -DCMAKE_INSTALL_PREFIX=$WSP_ROOT/opencv-${{ env.OPENCV_VERSION }}-macosx-arm64 \
-            -DCMAKE_OSX_ARCHITECTURES="arm64" -DCMAKE_OSX_SYSROOT=macosx \
-            -DCMAKE_OSX_DEPLOYMENT_TARGET=10.10 \
-           `cat ../opencv-options.txt` \
-            -DBUILD_opencv_world=ON && \
-            make -j4 && make install
-        rm -rf ./*
-        cd ..
-        cd $WSP_ROOT/opencv-${{ env.OPENCV_VERSION }}-macosx-arm64 && ls -la && cd lib && ls -la && cd ..
-        7z -mx5 a ../opencv-${{ env.OPENCV_VERSION }}-macOS-10.10-arm64.7z *
-        cd ..
-        echo ~~~~~~~~~~~~ arm64 build end ~~~~~~~~~~~~
+          artifact2=""
 
-    - name: Upload opencv-${{ env.OPENCV_VERSION }}
-      uses: softprops/action-gh-release@v3
-      with:
-        tag_name: opencv-${{ env.OPENCV_VERSION }}
-        name: Latest build of opencv-${{ env.OPENCV_VERSION }} for macOS
-        draft: false
-        prerelease: false
-        make_latest: true
-        files: |
-          ./opencv-${{ env.OPENCV_VERSION }}-*.7z
+          arch=${{ matrix.arch }}
+          if [[ $arch == universal ]]; then
+            echo ~~~~~~~~~~~~ x86_64 build begin ~~~~~~~~~~~~
+            arch="x86_64"
+            artifact2=opencv-osx-$arch-${{ env.OPENCV_VERSION }}
+            dst_dir=$PWD/$artifact2
 
-  make_macos_universal:
-    needs: [build_macos_intel, build_macos_arm64]
-    runs-on: macos-15-intel
-    steps:
-    - uses: actions/checkout@v7
-    - name: Install or Download Dependencies
-      run: |
-        brew install curl 7zip
-        curl -L https://github.com/nonwill/nw3rdBuild/releases/download/opencv-${{ env.OPENCV_VERSION }}/opencv-${{ env.OPENCV_VERSION }}-macOS-10.10-x86_64.7z -o opencv-${{ env.OPENCV_VERSION }}-macOS-10.10-x86_64.7z
-        curl -L https://github.com/nonwill/nw3rdBuild/releases/download/opencv-${{ env.OPENCV_VERSION }}/opencv-${{ env.OPENCV_VERSION }}-macOS-10.10-arm64.7z -o opencv-${{ env.OPENCV_VERSION }}-macOS-10.10-arm64.7z
-        export WSP_ROOT=$PWD
-        7z x opencv-${{ env.OPENCV_VERSION }}-macOS-10.10-x86_64.7z -r -o$WSP_ROOT/x86_64
-        7z x opencv-${{ env.OPENCV_VERSION }}-macOS-10.10-arm64.7z -r -o$WSP_ROOT/arm64
-        ls -la
+            cflags="-arch $arch -isysroot macosx -Wno-unused-local-typedef -Wno-unused-function -DNDEBUG -g -O3 -pipe -fPIC -fcxx-exceptions"
+            export LDFLAGS="-arch $arch -stdlib=libc++"
+            export CFLAGS="$cflags"
+            export CXXFLAGS="$cflags"
 
-    - name: Make OpenCV-${{ env.OPENCV_VERSION }}-Universal
-      shell: bash
-      run: |
-        export WSP_ROOT=$PWD
-        ocv_ver=${{ env.OPENCV_VERSION }}
-        mkdir -p $WSP_ROOT/opencv-${{ env.OPENCV_VERSION }}-macosx-universal/lib
-        cp -R $WSP_ROOT/x86_64/include $WSP_ROOT/opencv-${{ env.OPENCV_VERSION }}-macosx-universal
-        lipo \
-                $WSP_ROOT/x86_64/lib/libopencv_world.${{ env.OPENCV_VERSION }}.dylib \
-                $WSP_ROOT/arm64/lib/libopencv_world.${{ env.OPENCV_VERSION }}.dylib \
-                -create -output $WSP_ROOT/opencv-${{ env.OPENCV_VERSION }}-macosx-universal/lib/libopencv_world${ocv_ver//\.}.dylib
-        cd $WSP_ROOT/opencv-${{ env.OPENCV_VERSION }}-macosx-universal && ls -la && cd lib && ls -la && cd ..
-        7z -mx5 a ../opencv-${{ env.OPENCV_VERSION }}-macOS-10.10-universal.7z *
-        cd ..
+            mkdir build-$arch
+            cd build-$arch
 
-    - name: Get date and Cl version
-      id: vars
-      shell: bash
-      run: |
-        echo "update_date=$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
+            cmake ../opencv-${{ env.OPENCV_VERSION }} \
+              -G "Unix Makefiles" -DBUILD_LIST=core,imgcodecs -DBUILD_opencv_gapi=OFF -DWITH_AVIF=OFF \
+              -DCMAKE_INSTALL_PREFIX=$dst_dir \
+              -DCMAKE_OSX_ARCHITECTURES="$arch" -DCMAKE_OSX_SYSROOT=macosx \
+              -DCMAKE_OSX_DEPLOYMENT_TARGET=10.10 \
+              `cat ../opencv-options.txt` \
+              -DBUILD_opencv_world=ON && \
+              make -j4 && make install
 
-    - uses: andreaswilli/delete-release-assets-action@v4.0.0
-      with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        tag: opencv-${{ env.OPENCV_VERSION }}
-        deleteOnlyFromDrafts: false
+            cd ..
+            rm -rf build-$arch
 
-    - name: Upload opencv-${{ env.OPENCV_VERSION }}
-      uses: softprops/action-gh-release@v3
-      with:
-        tag_name: opencv-${{ env.OPENCV_VERSION }}
-        name: Latest build of opencv-${{ env.OPENCV_VERSION }} for macOS
-        body: |
-          date: ${{ steps.vars.outputs.update_date }}
-        draft: false
-        prerelease: false
-        make_latest: true
-        files: |
-          ./opencv-${{ env.OPENCV_VERSION }}-*.7z
+            tree $artifact2
+            cd $artifact2
+            7z -mx5 a ../${artifact2}.7z *
+            cd ..
+            echo ~~~~~~~~~~~~ x86_64 build end ~~~~~~~~~~~~
+          fi
+
+          arch=${{ matrix.arch }}
+          if [[ $arch == universal ]]; then
+            echo ~~~~~~~~~~~~ make universal begin ~~~~~~~~~~~~
+            arch=${{ matrix.arch }}
+            artifact=opencv-osx-$arch-${{ env.OPENCV_VERSION }}
+            mkdir -p $PWD/$artifact/lib
+
+            ocv_ver=${{ env.OPENCV_VERSION }}
+            version=${ocv_ver%\.*}
+            cp -R $PWD/$artifact2/include $PWD/$artifact
+            lipo \
+                $PWD/$artifact2/lib/libopencv_world.$ocv_ver.dylib \
+                $PWD/$artifact1/lib/libopencv_world.$ocv_ver.dylib \
+                -create -output $PWD/$artifact/lib/libopencv_world.$ocv_ver.dylib
+
+            pushd $PWD/$artifact/lib
+            ln -s libopencv_world.$ocv_ver.dylib libopencv_world.${version//\.}.dylib
+            ln -s libopencv_world.${version//\.}.dylib libopencv_world.dylib
+            popd
+
+            tree $artifact
+            cd $artifact
+            7z -mx5 a ../${artifact}.7z *
+            cd ..
+
+            rm -rf $WSP_ROOT/$artifact1
+            rm -rf $WSP_ROOT/$artifact2
+            echo ~~~~~~~~~~~~ make universal end ~~~~~~~~~~~~
+          fi
+
+          pwd && ls -la
+
+          echo "update_date=$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
+
+      - name: Upload artifact
+        if: steps.cache-build-result.outputs.cache-hit != 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: opencv-osx-${{ matrix.arch }}-${{ env.OPENCV_VERSION }}
+          path: opencv-osx-${{ matrix.arch }}-${{ env.OPENCV_VERSION }}
+
+      - name: Upload v${{ env.OPENCV_VERSION }}
+        if: steps.cache-build-result.outputs.cache-hit != 'true'
+        uses: svenstaro/upload-release-action@v2
+        with:
+          file_glob: true
+          file: "./*.7z"
+          overwrite: true
+          tag: opencv-${{ env.OPENCV_VERSION }}
+          release_name: OpenCV-${{ env.OPENCV_VERSION }}
+          body: |
+            date: ${{ steps.vars.outputs.update_date }}
+
 
   build_with_windows-2019:
-    needs: make_macos_universal
+    if: false
+    needs: macos-shared
     runs-on: windows-2022
     steps:
     - uses: actions/checkout@v7
-
     - name: Install or Download Dependencies
       run: |
         choco install curl unzip 7zip -y
@@ -315,18 +329,17 @@ jobs:
         echo ~~~~~~~~~~~~ msvc2019 build end ~~~~~~~~~~~~
         rm -rf $WSP_ROOT/opencv-${{ env.OPENCV_VERSION }}-msvc2019-x86
 
-    - name: Upload opencv-${{ env.OPENCV_VERSION }}
-      uses: softprops/action-gh-release@v3
+    - name: Upload v${{ env.OPENCV_VERSION }}
+      if: steps.cache-build-result.outputs.cache-hit != 'true'
+      uses: svenstaro/upload-release-action@v2
       with:
-        tag_name: opencv-${{ env.OPENCV_VERSION }}
-        name: Latest build of opencv-${{ env.OPENCV_VERSION }} for macOS and Windows
+        file_glob: true
+        file: "./opencv-${{ env.OPENCV_VERSION }}-*.7z"
+        overwrite: true
+        tag: opencv-${{ env.OPENCV_VERSION }}
+        release_name: OpenCV-${{ env.OPENCV_VERSION }}
         body: |
           date: ${{ steps.vars.outputs.update_date }}
           cl: ${{ steps.vars.outputs.cl_exe_info }}
           gcc: ${{ steps.vars.outputs.gcc_exe_info }}
           source: https://github.com/opencv/opencv/archive/${{ env.OPENCV_VERSION }}.tar.gz
-        draft: false
-        prerelease: false
-        make_latest: true
-        files: |
-          ./opencv-${{ env.OPENCV_VERSION }}-*.7z
