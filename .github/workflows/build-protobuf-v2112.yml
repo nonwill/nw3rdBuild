@@ -13,6 +13,185 @@ env:
   PROTOBUF_VERSION: "21.12"
 
 jobs:
+  macos-shared:
+    if: true
+    name: ${{ matrix.os }} ${{ matrix.arch }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-latest
+            arch: arm64
+          - os: macos-15-intel
+            arch: universal
+
+    steps:
+    - name: Cache build result for ${{ env.PROTOBUF_VERSION }}
+      id: cache-build-result
+      uses: actions/cache@v4
+      with:
+          path: protobuf-osx-${{ matrix.arch }}-${{ env.PROTOBUF_VERSION }}
+          key: protobuf-osx-${{ matrix.arch }}-${{ env.PROTOBUF_VERSION }}-cache-v1
+
+    - name: Action Checkout
+      if: steps.cache-build-result.outputs.cache-hit != 'true'
+      uses: actions/checkout@v7
+
+    - name: Install or Download Dependencies
+      if: steps.cache-build-result.outputs.cache-hit != 'true'
+      run: |
+          brew install curl 7zip tree
+          arch=${{ matrix.arch }}
+          if [[ $arch == arm64 ]]; then
+            brew install cmake
+          fi
+          cmake --version
+
+          curl -L https://github.com/protocolbuffers/protobuf/releases/download/v${{ env.PROTOBUF_VERSION }}/protobuf-cpp-3.${{ env.PROTOBUF_VERSION }}.tar.gz -o protobuf-cpp-3.${{ env.PROTOBUF_VERSION }}.tar.gz
+          ls -la
+
+          tar -xf protobuf-cpp-3.${{ env.PROTOBUF_VERSION }}.tar.gz
+          mv protobuf-3.${{ env.PROTOBUF_VERSION }} protobuf-${{ env.PROTOBUF_VERSION }}
+          rm -f protobuf-cpp-3.${{ env.PROTOBUF_VERSION }}.tar.gz
+
+    - name: Build Protocol Buffers-${{ env.PROTOBUF_VERSION }}-${{ matrix.arch }}
+      if: steps.cache-build-result.outputs.cache-hit != 'true'
+      id: vars
+      shell: bash
+      run: |
+          which ar ranlib clang clang++
+
+          echo ~~~~~~~~~~~~ arm64 build begin ~~~~~~~~~~~~
+          arch="arm64"
+          artifact1=protobuf-osx-$arch-${{ env.PROTOBUF_VERSION }}
+          dst_dir=$PWD/$artifact1
+
+          cflags="-arch $arch -isysroot macosx -Wno-unused-local-typedef -Wno-unused-function -DNDEBUG -g -O3 -pipe -fPIC -fcxx-exceptions"
+          export LDFLAGS="-arch $arch -stdlib=libc++"
+          export CFLAGS="$cflags"
+          export CXXFLAGS="$cflags"
+
+          mkdir build-$arch
+          cd build-$arch
+
+          cmake ../protobuf-${{ env.PROTOBUF_VERSION }} \
+            -G "Unix Makefiles" \
+            -DCMAKE_INSTALL_PREFIX=$dst_dir \
+            -DCMAKE_OSX_ARCHITECTURES="$arch" -DCMAKE_OSX_SYSROOT=macosx \
+            -DCMAKE_OSX_DEPLOYMENT_TARGET=10.10 \
+            `cat ../protobuf-options.txt` && \
+            make -j4 && make install
+
+          cd ..
+          rm -rf build-$arch
+
+          tree $artifact1
+
+          arch=${{ matrix.arch }}
+          if [[ $arch == arm64 ]]; then
+            cd $artifact1
+            7z -mx5 a ../${artifact1}.7z *
+            cd ..
+          fi
+          echo ~~~~~~~~~~~~ arm64 build end ~~~~~~~~~~~~
+
+          artifact2=""
+
+          arch=${{ matrix.arch }}
+          if [[ $arch == universal ]]; then
+            echo ~~~~~~~~~~~~ x86_64 build begin ~~~~~~~~~~~~
+            arch="x86_64"
+            artifact2=protobuf-osx-$arch-${{ env.PROTOBUF_VERSION }}
+            dst_dir=$PWD/$artifact2
+
+            cflags="-arch $arch -isysroot macosx -Wno-unused-local-typedef -Wno-unused-function -DNDEBUG -g -O3 -pipe -fPIC -fcxx-exceptions"
+            export LDFLAGS="-arch $arch -stdlib=libc++"
+            export CFLAGS="$cflags"
+            export CXXFLAGS="$cflags"
+
+            mkdir build-$arch
+            cd build-$arch
+
+            cmake ../protobuf-${{ env.PROTOBUF_VERSION }} \
+              -G "Unix Makefiles" \
+              -DCMAKE_INSTALL_PREFIX=$dst_dir \
+              -DCMAKE_OSX_ARCHITECTURES="$arch" -DCMAKE_OSX_SYSROOT=macosx \
+              -DCMAKE_OSX_DEPLOYMENT_TARGET=10.10 \
+              `cat ../protobuf-options.txt` && \
+              make -j4 && make install
+
+            cd ..
+            rm -rf build-$arch
+
+            tree $artifact2
+            cd $artifact2
+            7z -mx5 a ../${artifact2}.7z *
+            cd ..
+            echo ~~~~~~~~~~~~ x86_64 build end ~~~~~~~~~~~~
+          fi
+
+          arch=${{ matrix.arch }}
+          if [[ $arch == universal ]]; then
+            echo ~~~~~~~~~~~~ make universal begin ~~~~~~~~~~~~
+            arch=${{ matrix.arch }}
+            artifact=protobuf-osx-$arch-${{ env.PROTOBUF_VERSION }}
+            mkdir -p $PWD/$artifact/lib
+            mkdir -p $PWD/$artifact/bin
+
+            ocv_ver=${{ env.PROTOBUF_VERSION }}
+            version=${ocv_ver%\.*}
+            cp -R $PWD/$artifact2/include $PWD/$artifact
+            lipo \
+                $PWD/$artifact2/lib/libprotobuf-lite.a \
+                $PWD/$artifact1/lib/libprotobuf-lite.a \
+                -create -output $PWD/$artifact/lib/libprotobuf-lite.a
+            lipo \
+                $PWD/$artifact2/lib/libprotobuf.a \
+                $PWD/$artifact1/lib/libprotobuf.a \
+                -create -output $PWD/$artifact/lib/libprotobuf.a
+            lipo \
+                $PWD/$artifact2/lib/libprotoc.a \
+                $PWD/$artifact1/lib/libprotoc.a \
+                -create -output $PWD/$artifact/lib/libprotoc.a
+            lipo \
+                $PWD/$artifact2/bin/protoc \
+                $PWD/$artifact1/bin/protoc \
+                -create -output $PWD/$artifact/bin/protoc
+
+            tree $artifact
+            cd $artifact
+            7z -mx5 a ../${artifact}.7z *
+            cd ..
+
+            rm -rf $WSP_ROOT/$artifact1
+            rm -rf $WSP_ROOT/$artifact2
+            echo ~~~~~~~~~~~~ make universal end ~~~~~~~~~~~~
+          fi
+
+          pwd && ls -la
+
+          echo "update_date=$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
+
+    - name: Upload artifact
+      if: steps.cache-build-result.outputs.cache-hit != 'true'
+      uses: actions/upload-artifact@v4
+      with:
+          name: protobuf-osx-${{ matrix.arch }}-${{ env.PROTOBUF_VERSION }}
+          path: protobuf-osx-${{ matrix.arch }}-${{ env.PROTOBUF_VERSION }}
+
+    - name: Upload v${{ env.PROTOBUF_VERSION }}
+      if: steps.cache-build-result.outputs.cache-hit != 'true'
+      uses: svenstaro/upload-release-action@v2
+      with:
+          file_glob: true
+          file: "./*.7z"
+          overwrite: true
+          tag: protobuf-v${{ env.PROTOBUF_VERSION }}
+          release_name: Protocol Buffers (cpp) v${{ env.PROTOBUF_VERSION }}
+          body: |
+              date: ${{ steps.vars.outputs.update_date }}
+
   build_with_windows-2019:
     runs-on: windows-2022
     steps:
@@ -28,18 +207,24 @@ jobs:
         curl -L https://download.qt.io/official_releases/jom/jom.zip -o jom.zip
         unzip jom.zip -d ${{ github.workspace }}/deps/jom
         curl -L https://github.com/protocolbuffers/protobuf/releases/download/v${{ env.PROTOBUF_VERSION }}/protobuf-cpp-3.${{ env.PROTOBUF_VERSION }}.tar.gz -o protobuf-cpp-3.${{ env.PROTOBUF_VERSION }}.tar.gz
-        curl -L https://github.com/nonwill/mingw-distro/releases/download/mingw64-gcc14-crt_latest/mingw-w64+gcc-i686-all.7z -o mingw-w64_gcc-i686-all.7z
-        curl -L https://github.com/nonwill/mingw-distro/releases/download/mingw64-gcc14-crt_latest/mingw-w64+gcc-x86_64-all.7z -o mingw-w64_gcc-x86_64-all.7z
+        curl -L https://github.com/nonwill/mingw-distro/releases/download/mingw64-gcc15-crt_latest/mingw-w64+gcc-i686-all.7z -o mingw-w64_gcc-i686-all.7z
+        curl -L https://github.com/nonwill/mingw-distro/releases/download/mingw64-gcc15-crt_latest/mingw-w64+gcc-x86_64-all.7z -o mingw-w64_gcc-x86_64-all.7z
         dir
         ${{ github.workspace }}/deps/jom/jom.exe /VERSION
+
+        tar -xf protobuf-cpp-3.${{ env.PROTOBUF_VERSION }}.tar.gz
+        mv protobuf-3.${{ env.PROTOBUF_VERSION }} protobuf-${{ env.PROTOBUF_VERSION }}
+        cd protobuf-${{ env.PROTOBUF_VERSION }}
+        cat ../protobuf-v3.21.12.patch | patch -p1 --verbose || exit 1
+        cd ..
+
+        7z -mx5 a ./protobuf-${{ env.PROTOBUF_VERSION }}-src.7z ./protobuf-${{ env.PROTOBUF_VERSION }}
 
     - name: MinGW Build Protocol Buffers ${{ env.PROTOBUF_VERSION }}
       shell: bash
       run: |
         export WSP_ROOT=$PWD
         export USER_MINGW_DIR=$WSP_ROOT/deps/mingw64
-        tar -xf protobuf-cpp-3.${{ env.PROTOBUF_VERSION }}.tar.gz
-        # rm -f protobuf-cpp-3.${{ env.PROTOBUF_VERSION }}.tar.gz
         mkdir build
         echo ~~~~~~~~~~~~ mingw32 build prepare ~~~~~~~~~~~~
         7z x mingw-w64_gcc-i686-all.7z -r -o$USER_MINGW_DIR
@@ -48,7 +233,7 @@ jobs:
         gcc -v
         echo ~~~~~~~~~~~~ mingw32 build begin ~~~~~~~~~~~~
         cd build
-        cmake ../protobuf-3.${{ env.PROTOBUF_VERSION }} \
+        cmake ../protobuf-${{ env.PROTOBUF_VERSION }} \
             -G "MinGW Makefiles" \
             -DCMAKE_INSTALL_PREFIX=$WSP_ROOT/protobuf-${{ env.PROTOBUF_VERSION }}-mingw64 \
             `cat ../protobuf-options.txt` && \
@@ -57,7 +242,7 @@ jobs:
         cd ..
         strip $WSP_ROOT/protobuf-${{ env.PROTOBUF_VERSION }}-mingw64/bin/*.exe
         cd $WSP_ROOT/protobuf-${{ env.PROTOBUF_VERSION }}-mingw64
-        7z -mx5 a ../protobuf-cpp-3.${{ env.PROTOBUF_VERSION }}-mingw64-i686.7z *
+        7z -mx5 a ../protobuf-${{ env.PROTOBUF_VERSION }}-mingw64-i686.7z *
         cd ..
         echo ~~~~~~~~~~~~ mingw32 build end ~~~~~~~~~~~~
         rm -rf $WSP_ROOT/protobuf-${{ env.PROTOBUF_VERSION }}-mingw64
@@ -68,7 +253,7 @@ jobs:
         gcc -v
         echo ~~~~~~~~~~~~ mingw64 build begin ~~~~~~~~~~~~
         cd build
-        cmake ../protobuf-3.${{ env.PROTOBUF_VERSION }} \
+        cmake ../protobuf-${{ env.PROTOBUF_VERSION }} \
             -G "MinGW Makefiles" \
             -DCMAKE_INSTALL_PREFIX=$WSP_ROOT/protobuf-${{ env.PROTOBUF_VERSION }}-mingw64 \
             `cat ../protobuf-options.txt` && \
@@ -77,7 +262,7 @@ jobs:
         cd ..
         strip $WSP_ROOT/protobuf-${{ env.PROTOBUF_VERSION }}-mingw64/bin/*.exe
         cd $WSP_ROOT/protobuf-${{ env.PROTOBUF_VERSION }}-mingw64
-        7z -mx5 a ../protobuf-cpp-3.${{ env.PROTOBUF_VERSION }}-mingw64-x86_64.7z *
+        7z -mx5 a ../protobuf-${{ env.PROTOBUF_VERSION }}-mingw64-x86_64.7z *
         cd ..
         echo ~~~~~~~~~~~~ mingw64 build end ~~~~~~~~~~~~
         rm -rf $WSP_ROOT/protobuf-${{ env.PROTOBUF_VERSION }}-mingw64
@@ -109,7 +294,7 @@ jobs:
         echo ~~~~~~~~~~~~ msvc2019 build begin ~~~~~~~~~~~~
         cl
         cd build
-        cmake ../protobuf-3.${{ env.PROTOBUF_VERSION }} \
+        cmake ../protobuf-${{ env.PROTOBUF_VERSION }} \
             -G "NMake Makefiles" \
             -DCMAKE_MAKE_PROGRAM=$WSP_ROOT/deps/jom/jom.exe \
             -DCMAKE_INSTALL_PREFIX=$WSP_ROOT/protobuf-${{ env.PROTOBUF_VERSION }}-msvc2019-x64 \
@@ -118,7 +303,7 @@ jobs:
         rm -rf ./*
         cd ..
         cd $WSP_ROOT/protobuf-${{ env.PROTOBUF_VERSION }}-msvc2019-x64
-        7z -mx5 a ../protobuf-cpp-3.${{ env.PROTOBUF_VERSION }}-msvc2019-x64.7z *
+        7z -mx5 a ../protobuf-${{ env.PROTOBUF_VERSION }}-msvc2019-x64.7z *
         cd ..
         echo ~~~~~~~~~~~~ msvc2019 build end ~~~~~~~~~~~~
         rm -rf $WSP_ROOT/protobuf-${{ env.PROTOBUF_VERSION }}-msvc2019-x64
@@ -137,7 +322,7 @@ jobs:
         echo ~~~~~~~~~~~~ msvc2019 build begin ~~~~~~~~~~~~
         cl
         cd build
-        cmake ../protobuf-3.${{ env.PROTOBUF_VERSION }} \
+        cmake ../protobuf-${{ env.PROTOBUF_VERSION }} \
             -G "NMake Makefiles" \
             -DCMAKE_MAKE_PROGRAM=$WSP_ROOT/deps/jom/jom.exe \
             -DCMAKE_INSTALL_PREFIX=$WSP_ROOT/protobuf-${{ env.PROTOBUF_VERSION }}-msvc2019-x86 \
@@ -146,29 +331,21 @@ jobs:
         rm -rf ./*
         cd ..
         cd $WSP_ROOT/protobuf-${{ env.PROTOBUF_VERSION }}-msvc2019-x86
-        7z -mx5 a ../protobuf-cpp-3.${{ env.PROTOBUF_VERSION }}-msvc2019-x86.7z *
+        7z -mx5 a ../protobuf-${{ env.PROTOBUF_VERSION }}-msvc2019-x86.7z *
         cd ..
         echo ~~~~~~~~~~~~ msvc2019 build end ~~~~~~~~~~~~
         rm -rf $WSP_ROOT/protobuf-${{ env.PROTOBUF_VERSION }}-msvc2019-x86
 
-    - uses: andreaswilli/delete-release-assets-action@v4.0.0
-      with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        tag: protobuf-v${{ env.PROTOBUF_VERSION }}
-        deleteOnlyFromDrafts: false
-
     - name: Upload Protocol Buffers ${{ env.PROTOBUF_VERSION }}
-      uses: softprops/action-gh-release@v3
+      uses: svenstaro/upload-release-action@v2
       with:
-        tag_name: protobuf-v${{ env.PROTOBUF_VERSION }}
-        name: Latest build of Protocol Buffers cpp-3.${{ env.PROTOBUF_VERSION }}
+        file_glob: true
+        file: "./*.7z"
+        overwrite: true
+        tag: protobuf-v${{ env.PROTOBUF_VERSION }}
+        release_name: Protocol Buffers (cpp) v${{ env.PROTOBUF_VERSION }}
         body: |
-          date: ${{ steps.vars.outputs.update_date }}
-          cl: ${{ steps.vars.outputs.cl_exe_info }}
-          gcc: ${{ steps.vars.outputs.gcc_exe_info }}
-        draft: false
-        prerelease: false
-        make_latest: true
-        files: |
-          ./protobuf-cpp-3.${{ env.PROTOBUF_VERSION }}-*.7z
-          ./protobuf-cpp-3.${{ env.PROTOBUF_VERSION }}.tar.gz
+            date: ${{ steps.vars.outputs.update_date }}
+            cl: ${{ steps.vars.outputs.cl_exe_info }}
+            gcc: ${{ steps.vars.outputs.gcc_exe_info }}
+            source: https://github.com/protocolbuffers/protobuf/releases/tag/v21.12
