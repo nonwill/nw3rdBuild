@@ -32,7 +32,7 @@ jobs:
       uses: actions/cache@v4
       with:
           path: protobuf-osx-${{ matrix.arch }}-${{ env.PROTOBUF_VERSION }}
-          key: protobuf-osx-${{ matrix.arch }}-${{ env.PROTOBUF_VERSION }}-cache-v1
+          key: protobuf-osx-${{ matrix.arch }}-${{ env.PROTOBUF_VERSION }}-cache-v2
 
     - name: Action Checkout
       if: steps.cache-build-result.outputs.cache-hit != 'true'
@@ -54,6 +54,11 @@ jobs:
           tar -xf protobuf-cpp-3.${{ env.PROTOBUF_VERSION }}.tar.gz
           mv protobuf-3.${{ env.PROTOBUF_VERSION }} protobuf-${{ env.PROTOBUF_VERSION }}
           rm -f protobuf-cpp-3.${{ env.PROTOBUF_VERSION }}.tar.gz
+
+          cd protobuf-${{ env.PROTOBUF_VERSION }}
+          cat ../protobuf-v3.21.12.patch | patch -p1 --verbose || exit 1
+          cat ../protobuf-v3.21.12-a2859cc.patch | patch -p1 --verbose || exit 1
+          cd ..
 
     - name: Build Protocol Buffers-${{ env.PROTOBUF_VERSION }}-${{ matrix.arch }}
       if: steps.cache-build-result.outputs.cache-hit != 'true'
