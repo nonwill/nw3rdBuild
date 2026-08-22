@@ -1,0 +1,12 @@
+diff -aurN a/src/google/protobuf/port_def.inc b/src/google/protobuf/port_def.inc
+--- a/src/google/protobuf/port_def.inc	2022-12-14 22:20:05.000000000 +0800
++++ b/src/google/protobuf/port_def.inc	2026-08-22 13:26:50.750988500 +0800
+@@ -256,7 +256,7 @@
+ #endif
+ #if __has_cpp_attribute(clang::musttail) && !defined(__arm__) && \
+     !defined(_ARCH_PPC) && !defined(__wasm__) &&                 \
+-    !(defined(_MSC_VER) && defined(_M_IX86)) &&                  \
++    !(defined(_MSC_VER) && defined(_M_IX86)) && !defined(__i386__) && \
+     !(defined(__NDK_MAJOR__) && __NDK_MAJOR <= 24)
+ #  ifndef PROTO2_OPENSOURCE
+ // Compilation fails on ARM32: b/195943306

@@ -216,6 +216,7 @@ jobs:
         mv protobuf-3.${{ env.PROTOBUF_VERSION }} protobuf-${{ env.PROTOBUF_VERSION }}
         cd protobuf-${{ env.PROTOBUF_VERSION }}
         cat ../protobuf-v3.21.12.patch | patch -p1 --verbose || exit 1
+        cat ../protobuf-v3.21.12-a2859cc.patch | patch -p1 --verbose || exit 1
         cd ..
 
         7z -mx5 a ./protobuf-${{ env.PROTOBUF_VERSION }}-src.7z ./protobuf-${{ env.PROTOBUF_VERSION }}
